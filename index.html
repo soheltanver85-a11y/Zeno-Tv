@@ -1,29 +1,23 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zeno TV - Android TV</title>
+<title>Zeno TV - World Class</title>
 
 <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 
 <style>
-:root{
---primary:#e50914;
---bg:#000;
---card:#1a1a1a;
-}
-
 body{
 margin:0;
-background:var(--bg);
-font-family:sans-serif;
-overflow:hidden;
+background:#000;
+font-family:Arial, sans-serif;
 color:white;
+overflow:hidden;
 }
 
-/* PLAYER */
+/* FULL VIDEO */
 #player-container{
 position:absolute;
 width:100%;
@@ -31,49 +25,75 @@ height:100vh;
 z-index:1;
 }
 
-/* SIDEBAR */
-.sidebar{
+/* LOADING */
+#loading{
 position:absolute;
-left:0;
-top:0;
-width:260px;
-height:100%;
-background:rgba(0,0,0,0.85);
-padding:80px 20px;
-z-index:5;
-display:flex;
-flex-direction:column;
-gap:15px;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:22px;
+display:none;
+z-index:10;
 }
 
-.cat-item{
-padding:14px;
+/* OVERLAY */
+.overlay{
+position:absolute;
+bottom:0;
+width:100%;
+padding:40px 80px;
+background:linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+z-index:5;
+transition:.4s;
+}
+
+.hide{
+opacity:0;
+pointer-events:none;
+}
+
+/* CATEGORY BAR */
+.category-bar{
+display:flex;
+gap:25px;
+margin-bottom:25px;
+}
+
+.category{
+padding:12px 20px;
+background:#1b1b1b;
 border-radius:8px;
-background:#111;
 outline:none;
 transition:.2s;
 }
 
-.cat-item:focus{
-background:var(--primary);
-transform:scale(1.05);
+.category:focus{
+background:#e50914;
+transform:scale(1.1);
 }
 
-/* BOTTOM UI */
-.bottom-ui{
-position:absolute;
-bottom:0;
-left:260px;
-width:calc(100% - 260px);
-padding:30px 60px;
-background:linear-gradient(to top,black,transparent);
-z-index:4;
-transition:.3s;
+/* CHANNEL INFO */
+.channel-info{
+display:flex;
+align-items:center;
+gap:20px;
+margin-bottom:15px;
 }
 
+.logo-box{
+width:130px;
+height:70px;
+background:#222;
+border-radius:8px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+/* CHANNEL ROW */
 .channel-row{
 display:flex;
-gap:30px;
+gap:25px;
 overflow-x:auto;
 scroll-behavior:smooth;
 }
@@ -82,30 +102,24 @@ scroll-behavior:smooth;
 display:none;
 }
 
-.card{
-flex:0 0 220px;
-height:120px;
-background:var(--card);
+.channel-card{
+flex:0 0 200px;
+height:110px;
+background:#1b1b1b;
 border-radius:12px;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:18px;
 outline:none;
 border:3px solid transparent;
 transition:.2s;
+font-size:15px;
 }
 
-.card:focus{
-border-color:var(--primary);
-transform:scale(1.15);
-background:#222;
-}
-
-/* Hide UI */
-.ui-hide{
-opacity:0;
-pointer-events:none;
+.channel-card:focus{
+border-color:#e50914;
+transform:scale(1.2);
+background:#2a2a2a;
 }
 </style>
 </head>
@@ -116,27 +130,33 @@ pointer-events:none;
 <video id="tv-player" class="video-js vjs-default-skin" autoplay playsinline></video>
 </div>
 
-<div class="sidebar">
-<div class="cat-item" tabindex="0" onclick="filterCat('All')">All</div>
-<div class="cat-item" tabindex="0" onclick="filterCat('News')">News</div>
-<div class="cat-item" tabindex="0" onclick="filterCat('Sports')">Sports</div>
-<div class="cat-item" tabindex="0" onclick="filterCat('Movies')">Movies</div>
+<div id="loading">Loading...</div>
+
+<div class="overlay" id="overlay">
+
+<div class="category-bar" id="categoryBar"></div>
+
+<div class="channel-info">
+<div class="logo-box" id="logoBox">LIVE</div>
+<h2 id="channelName">Channel</h2>
 </div>
 
-<div class="bottom-ui" id="bottomUI">
-<h2 id="catTitle">All Channels</h2>
 <div class="channel-row" id="channelList"></div>
+
 </div>
 
 <script>
-const m3uUrl='YOUR_M3U_LINK';
+const m3uUrl="YOUR_M3U_LINK";
 const player=videojs('tv-player');
 
 let allChannels=[];
 let currentChannels=[];
+let categories=new Set();
+let favorites=JSON.parse(localStorage.getItem("favs"))||[];
 let uiTimer;
 
-async function fetchData(){
+/* LOAD M3U */
+async function loadChannels(){
 const res=await fetch(m3uUrl);
 const text=await res.text();
 parseM3U(text);
@@ -147,75 +167,129 @@ const lines=data.split('\n');
 for(let i=0;i<lines.length;i++){
 if(lines[i].includes('#EXTINF')){
 const name=lines[i].split(',')[1]||"Channel";
+const logo=lines[i].match(/tvg-logo="([^"]+)"/)?.[1]||"";
+const group=lines[i].match(/group-title="([^"]+)"/)?.[1]||"Other";
 const url=lines[i+1]?.trim();
-const group=lines[i].match(/group-title="([^"]+)"/)?.[1]||"All";
-if(url) allChannels.push({name,url,group});
+if(url){
+allChannels.push({name,url,logo,group});
+categories.add(group);
 }
 }
-filterCat('All');
+}
+renderCategories();
+filterCategory("All");
 }
 
-function filterCat(cat){
-document.getElementById('catTitle').innerText=cat+" Channels";
+/* CATEGORY RENDER */
+function renderCategories(){
+const bar=document.getElementById("categoryBar");
+bar.innerHTML="";
+
+["All","Favorites",...categories].forEach(cat=>{
+const item=document.createElement("div");
+item.className="category";
+item.tabIndex=0;
+item.innerText=cat;
+
+item.onclick=()=>filterCategory(cat);
+
+item.onkeydown=(e)=>{
+if(e.key==="ArrowRight") item.nextElementSibling?.focus();
+if(e.key==="ArrowLeft") item.previousElementSibling?.focus();
+if(e.key==="ArrowDown") document.querySelector(".channel-card")?.focus();
+};
+
+bar.appendChild(item);
+});
+}
+
+/* FILTER */
+function filterCategory(cat){
 if(cat==="All") currentChannels=allChannels;
-else currentChannels=allChannels.filter(c=>c.group.includes(cat));
+else if(cat==="Favorites") currentChannels=allChannels.filter(c=>favorites.includes(c.url));
+else currentChannels=allChannels.filter(c=>c.group===cat);
+
 renderChannels();
 }
 
+/* RENDER CHANNELS */
 function renderChannels(){
-const list=document.getElementById('channelList');
-list.innerHTML='';
+const list=document.getElementById("channelList");
+list.innerHTML="";
 
-currentChannels.forEach((ch,index)=>{
-const card=document.createElement('div');
-card.className='card';
+currentChannels.forEach(ch=>{
+const card=document.createElement("div");
+card.className="channel-card";
 card.tabIndex=0;
 card.innerText=ch.name;
 
-card.addEventListener('focus',()=>{
-player.src({type:'application/x-mpegURL',src:ch.url});
-player.play();
-
-card.scrollIntoView({
-behavior:'smooth',
-inline:'center',
-block:'nearest'
-});
-
+card.addEventListener("focus",()=>{
+playChannel(ch);
+card.scrollIntoView({behavior:"smooth",inline:"center"});
 showUI();
 });
 
-card.addEventListener('keydown',(e)=>{
-if(e.key==='ArrowRight') card.nextElementSibling?.focus();
-if(e.key==='ArrowLeft') card.previousElementSibling?.focus();
-if(e.key==='ArrowUp') document.querySelector('.cat-item').focus();
+card.addEventListener("keydown",(e)=>{
+if(e.key==="ArrowRight") card.nextElementSibling?.focus();
+if(e.key==="ArrowLeft") card.previousElementSibling?.focus();
+if(e.key==="ArrowUp") document.querySelector(".category")?.focus();
+if(e.key==="Enter") toggleFavorite(ch.url);
 });
 
 list.appendChild(card);
 });
 
-/* Auto focus first channel */
 setTimeout(()=>{
-document.querySelector('.card')?.focus();
+document.querySelector(".channel-card")?.focus();
 },400);
 }
 
-function showUI(){
-document.getElementById('bottomUI').classList.remove('ui-hide');
-clearTimeout(uiTimer);
-uiTimer=setTimeout(()=>{
-document.getElementById('bottomUI').classList.add('ui-hide');
-},6000);
+/* PLAY */
+function playChannel(ch){
+document.getElementById("loading").style.display="block";
+
+player.src({type:'application/x-mpegURL',src:ch.url});
+player.play();
+
+player.on('loadeddata',()=>{
+document.getElementById("loading").style.display="none";
+});
+
+document.getElementById("channelName").innerText=ch.name;
+
+if(ch.logo){
+document.getElementById("logoBox").innerHTML=
+`<img src="${ch.logo}" style="width:100%;height:100%;object-fit:contain;">`;
+}
 }
 
-/* Remote Back Button */
-document.addEventListener('keydown',function(e){
+/* FAVORITE */
+function toggleFavorite(url){
+if(favorites.includes(url))
+favorites=favorites.filter(f=>f!==url);
+else
+favorites.push(url);
+
+localStorage.setItem("favs",JSON.stringify(favorites));
+}
+
+/* UI AUTO HIDE */
+function showUI(){
+document.getElementById("overlay").classList.remove("hide");
+clearTimeout(uiTimer);
+uiTimer=setTimeout(()=>{
+document.getElementById("overlay").classList.add("hide");
+},7000);
+}
+
+/* REMOTE BACK */
+document.addEventListener("keydown",function(e){
 if(e.keyCode===461 || e.keyCode===8){
-document.querySelector('.card')?.focus();
+document.querySelector(".channel-card")?.focus();
 }
 });
 
-fetchData();
+loadChannels();
 </script>
 
 </body>
