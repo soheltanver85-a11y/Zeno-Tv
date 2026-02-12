@@ -3,214 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Pro Android TV</title>
+    <title>Standard TV Layout</title>
 
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        :root {
-            --primary: #ff0000;
-            --overlay-bg: rgba(0, 0, 0, 0.85);
-        }
-
         body {
             margin: 0;
             background: #000;
-            color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
             overflow: hidden;
             height: 100vh;
         }
 
-        /* ভিডিও প্লেয়ার */
-        #player-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .video-js {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* নতুন উন্নত ওভারলে */
-        #ui-overlay {
+        /* Safe Zone Container - এটিই মূল সমাধান */
+        #safe-zone {
             position: absolute;
-            bottom: 40px; /* টিভির স্ক্রিন যাতে না কাটে তাই নিচে গ্যাপ রাখা হয়েছে */
-            left: 0;
-            width: 100%;
+            top: 5%; bottom: 8%; /* নিচ থেকে ৮% উপরে তুলে রাখা হয়েছে */
+            left: 5%; right: 5%;
             z-index: 10;
-            transition: opacity 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            pointer-events: none;
         }
 
-        .category-label {
-            margin-left: 60px;
-            font-size: 26px;
-            font-weight: bold;
-            color: #ddd;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 4px #000;
-        }
-
-        /* চ্যানেল রো */
+        /* কার্ডের সারি */
         .channel-row {
             display: flex;
             gap: 20px;
-            padding: 10px 60px;
             overflow-x: auto;
-            scroll-behavior: smooth;
+            padding: 20px 0;
+            pointer-events: auto;
         }
+        .channel-row::-webkit-scrollbar { display: none; }
 
-        .channel-row::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* কার্ড ডিজাইন - উন্নত টফি স্টাইল */
-        .channel-card {
-            flex: 0 0 240px;
-            height: 140px;
-            background: #181818;
-            border-radius: 12px;
+        .card {
+            flex: 0 0 260px;
+            height: 150px;
+            background: rgba(40, 40, 40, 0.95);
             border: 4px solid transparent;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            outline: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        /* রিমোট দিয়ে সিলেক্ট করলে যা হবে */
-        .channel-card:focus {
-            transform: scale(1.15);
-            border-color: var(--primary);
-            background: #252525;
-            z-index: 100;
-        }
-
-        .channel-logo {
-            width: 60%;
-            height: 50%;
-            object-fit: contain;
-            margin-bottom: 8px;
-        }
-
-        .channel-name {
-            font-size: 18px;
-            font-weight: 500;
+            border-radius: 15px;
             text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 90%;
+            outline: none;
+            transition: 0.3s;
         }
 
-        .ui-hidden {
-            opacity: 0;
-            pointer-events: none;
+        .card:focus {
+            transform: scale(1.1);
+            border-color: #ff0000;
+            background: #1a1a1a;
         }
+
+        .card img { width: 60%; height: 50%; object-fit: contain; margin-top: 15px; }
+        .card div { font-size: 20px; color: white; margin-top: 10px; font-weight: bold; }
+
+        #player-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .video-js { width: 100% !important; height: 100% !important; }
     </style>
 </head>
-
 <body>
 
 <div id="player-container">
-    <video id="player" class="video-js vjs-default-skin" preload="auto" playsinline muted></video>
+    <video id="player" class="video-js vjs-default-skin" autoplay muted playsinline></video>
 </div>
 
-<div id="ui-overlay">
-    <div class="category-label">লাইভ টিভি চ্যানেল</div>
-    <div class="channel-row" id="channelList">
-        </div>
+<div id="safe-zone">
+    <div style="color: #fff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">লাইভ চ্যানেল</div>
+    <div class="channel-row" id="list"></div>
 </div>
 
 <script>
     const m3uUrl = "https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2";
     const player = videojs('player');
-    let hideTimer;
 
-    // ডাটা লোড করা
-    async function loadTV() {
-        try {
-            const res = await fetch(m3uUrl);
-            const text = await res.text();
-            const channels = [];
-            const lines = text.split('\n');
+    async function init() {
+        const res = await fetch(m3uUrl);
+        const text = await res.text();
+        const lines = text.split('\n');
+        const list = document.getElementById('list');
 
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes("#EXTINF")) {
-                    const name = lines[i].split(',')[1] || "চ্যানেল";
-                    const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/200x120?text=TV";
-                    const url = lines[i + 1]?.trim();
-                    if (url && url.startsWith('http')) {
-                        channels.push({ name, logo, url });
-                    }
-                }
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes("#EXTINF")) {
+                const name = lines[i].split(',')[1] || "Channel";
+                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                const url = lines[i+1]?.trim();
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.tabIndex = 0;
+                card.innerHTML = `<img src="${logo}"><div>${name}</div>`;
+                
+                card.onfocus = () => {
+                    player.src({ src: url, type: 'application/x-mpegURL' });
+                    card.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                };
+                list.appendChild(card);
             }
-            buildUI(channels);
-        } catch (e) {
-            console.error("M3U Error");
         }
+        setTimeout(() => document.querySelector('.card').focus(), 1000);
     }
 
-    // UI তৈরি
-    function buildUI(channels) {
-        const list = document.getElementById('channelList');
-        channels.forEach((ch) => {
-            const card = document.createElement('div');
-            card.className = 'channel-card';
-            card.tabIndex = 0;
-            card.innerHTML = `<img class="channel-logo" src="${ch.logo}"><div class="channel-name">${ch.name}</div>`;
-
-            card.onfocus = () => {
-                showUI();
-                player.src({ src: ch.url, type: 'application/x-mpegURL' });
-                player.play().catch(() => {
-                    player.muted(true);
-                    player.play();
-                });
-                card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            };
-
-            card.onclick = () => {
-                player.muted(false);
-                hideUI();
-            };
-
-            list.appendChild(card);
-        });
-
-        setTimeout(() => document.querySelector('.channel-card')?.focus(), 1000);
-    }
-
-    // রিমোট বাটন হ্যান্ডলিং
     document.addEventListener('keydown', (e) => {
-        showUI();
         const active = document.activeElement;
         if (e.key === "ArrowRight") active.nextElementSibling?.focus();
         if (e.key === "ArrowLeft") active.previousElementSibling?.focus();
-        if (e.key === "Enter" || e.keyCode === 13 || e.key === "ArrowUp") hideUI();
     });
 
-    function showUI() {
-        document.getElementById('ui-overlay').classList.remove('ui-hidden');
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(hideUI, 8000);
-    }
-
-    function hideUI() {
-        document.getElementById('ui-overlay').classList.add('ui-hidden');
-    }
-
-    loadTV();
+    init();
 </script>
-
 </body>
 </html>
