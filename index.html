@@ -3,33 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Toffee Style</title>
+    <title>Zeno TV - Android TV Edition</title>
 
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 
     <style>
         :root {
-            --primary-color: #ff0000; /* টফি থিম লাল */
+            --primary-color: #ff0000;
             --bg-color: #000000;
             --card-bg: #1a1a1a;
+            --focus-bg: #333333;
         }
 
         body {
             margin: 0;
             background: var(--bg-color);
             color: #fff;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
+            height: 100vh;
         }
 
         /* ফুল স্ক্রিন ভিডিও প্লেয়ার */
         #player-container {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100vh;
+            height: 100%;
             z-index: 1;
         }
 
@@ -38,91 +40,97 @@
             height: 100% !important;
         }
 
-        /* টফি স্টাইল ওভারলে */
+        /* টিভি ওভারলে - টিভির জন্য প্যাডিং বাড়ানো হয়েছে */
         .overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 45%;
-            background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 50%, transparent 100%);
+            height: 50%;
+            background: linear-gradient(to top, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%);
             z-index: 2;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding-bottom: 50px;
-            transition: opacity 0.5s;
+            padding-bottom: 40px; /* Overscan protection */
+            transition: opacity 0.4s ease;
+            opacity: 1;
         }
 
         .category-title {
-            margin-left: 60px;
-            font-size: 24px;
-            margin-bottom: 15px;
+            margin-left: 50px;
+            font-size: 28px;
+            margin-bottom: 10px;
             font-weight: bold;
-            color: #ccc;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* চ্যানেল রো (Row) */
+        /* চ্যানেল লিস্ট */
         .channel-row {
             display: flex;
-            gap: 20px;
-            padding: 20px 60px;
-            overflow-x: auto;
-            scroll-behavior: smooth;
+            gap: 25px;
+            padding: 20px 50px;
+            overflow-x: hidden; /* টিভির জন্য স্ক্রলবার হাইড */
+            white-space: nowrap;
         }
 
-        .channel-row::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* টফি স্টাইল চ্যানেল কার্ড */
+        /* টফি স্টাইল কার্ড - টিভির বড় স্ক্রিনের জন্য সাইজ অ্যাডজাস্ট */
         .channel-card {
-            flex: 0 0 260px;
-            height: 150px;
+            flex: 0 0 280px;
+            height: 160px;
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 15px;
             position: relative;
-            overflow: hidden;
             outline: none;
             border: 4px solid transparent;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            display: inline-flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
 
-        /* রিমোট ফোকাস ইফেক্ট */
+        /* রিমোট ফোকাস ইফেক্ট - টিভিতে এটি সবচেয়ে গুরুত্বপূর্ণ */
         .channel-card:focus {
             transform: scale(1.1);
             border-color: var(--primary-color);
-            background: #252525;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            background: var(--focus-bg);
+            z-index: 10;
         }
 
         .channel-logo {
-            width: 80%;
+            width: 70%;
             height: 60%;
             object-fit: contain;
-            margin-bottom: 10px;
+            pointer-events: none;
         }
 
         .channel-name {
-            font-size: 18px;
+            margin-top: 10px;
+            font-size: 20px;
             font-weight: 500;
+            pointer-events: none;
         }
 
-        /* টিভির জন্য কিউ (Cue) বাটন স্টাইল */
-        .vjs-big-play-button {
-            display: none !important; /* অটো প্লে হবে তাই দরকার নেই */
+        /* লোডার */
+        #loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 99;
+            font-size: 20px;
         }
     </style>
 </head>
 
 <body>
 
+<div id="loader">লোড হচ্ছে...</div>
+
 <div id="player-container">
-    <video id="player" class="video-js vjs-default-skin" autoplay playsinline></video>
+    <video id="player" class="video-js vjs-default-skin" preload="auto" playsinline></video>
 </div>
 
 <div class="overlay" id="ui-overlay">
@@ -133,94 +141,120 @@
 
 <script>
     const m3uUrl = "https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2";
-    const player = videojs('player');
+    const player = videojs('player', {
+        autoplay: true,
+        controls: false, // টিভির জন্য কাস্টম কন্ট্রোল ব্যবহার করা ভালো
+        fluid: true
+    });
+
     let hideTimeout;
 
+    // M3U ডেটা ফেচ করা
     async function fetchM3U() {
         try {
             const res = await fetch(m3uUrl);
             const text = await res.text();
-            const lines = text.trim().split("\n");
-            
-            let channels = [];
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith("#EXTINF")) {
-                    const info = lines[i];
-                    const nextUrl = lines[i + 1]?.trim();
+            document.getElementById('loader').style.display = 'none';
+            parseM3U(text);
+        } catch (e) {
+            document.getElementById('loader').innerText = "চ্যানেল লোড করতে ব্যর্থ!";
+        }
+    }
 
-                    if (nextUrl && !nextUrl.startsWith("#")) {
-                        const name = info.split(",")[1]?.trim() || "চ্যানেল";
-                        const logoMatch = info.match(/tvg-logo="([^"]+)"/);
-                        const logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/200x120?text=TV";
-                        channels.push({ name, url: nextUrl, logo });
-                    }
+    function parseM3U(data) {
+        const lines = data.split("\n");
+        let channels = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes("#EXTINF")) {
+                const info = lines[i];
+                const url = lines[i + 1]?.trim();
+                if (url && url.startsWith("http")) {
+                    const name = info.split(",")[1] || "Unknown";
+                    const logo = info.match(/tvg-logo="([^"]+)"/)?.[1] || "https://via.placeholder.com/280x160?text=TV";
+                    channels.push({ name, url, logo });
                 }
             }
-            renderChannels(channels);
-        } catch (e) {
-            console.error("M3U লোড করতে সমস্যা হয়েছে");
         }
+        renderChannels(channels);
     }
 
     function renderChannels(channels) {
         const list = document.getElementById("channelList");
         list.innerHTML = "";
 
-        channels.forEach((ch) => {
+        channels.forEach((ch, index) => {
             const card = document.createElement("div");
             card.className = "channel-card";
-            card.tabIndex = 0;
+            card.tabIndex = 0; // ফোকাসযোগ্য করার জন্য
 
             card.innerHTML = `
-                <img class="channel-logo" src="${ch.logo}" alt="">
+                <img class="channel-logo" src="${ch.logo}">
                 <div class="channel-name">${ch.name}</div>
             `;
 
-            // রিমোট ফোকাস ইভেন্ট
+            // ফোকাস হলে অটোমেটিক ভিডিও প্লে হবে (জ্যাপিং)
             card.onfocus = () => {
-                showUI();
+                resetTimer();
                 player.src({ type: 'application/x-mpegURL', src: ch.url });
-                player.play();
-                card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                card.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
             };
 
-            // ক্লিক বা ওকে বাটন
-            card.onclick = () => {
-                hideUI();
-            };
+            // ওকে বা এন্টার চাপলে মেনু হাইড হবে
+            card.onclick = () => hideUI();
 
             list.appendChild(card);
         });
 
-        // প্রথম চ্যানেল ফোকাস
-        setTimeout(() => {
-            document.querySelector(".channel-card")?.focus();
-        }, 1000);
+        // প্রথম চ্যানেলে ফোকাস সেট করা
+        if (channels.length > 0) {
+            setTimeout(() => {
+                document.querySelector(".channel-card").focus();
+            }, 500);
+        }
     }
 
-    // টিভি রিমোট কন্ট্রোল (D-Pad)
+    // টিভি রিমোট নেভিগেশন লজিক
     document.addEventListener('keydown', (e) => {
         const active = document.activeElement;
-        showUI(); // বাটন টিপলেই মেনু দেখাবে
+        showUI();
 
-        if (e.key === "ArrowRight") {
-            active.nextElementSibling?.focus();
-        } else if (e.key === "ArrowLeft") {
-            active.previousElementSibling?.focus();
-        } else if (e.key === "ArrowUp" || e.key === "Enter") {
-            hideUI(); // উপরের দিকে বাটন টিপলে মেনু লুকিয়ে ভিডিও বড় হবে
+        switch(e.key) {
+            case "ArrowRight":
+                active.nextElementSibling?.focus();
+                break;
+            case "ArrowLeft":
+                active.previousElementSibling?.focus();
+                break;
+            case "Enter":
+            case "ArrowUp":
+                hideUI();
+                break;
+            case "ArrowDown":
+                showUI();
+                break;
+            case "Backspace":
+            case "Escape":
+                showUI();
+                e.preventDefault();
+                break;
         }
     });
 
-    // মেনু অটো হাইড সিস্টেম
+    // UI কন্ট্রোল ফাংশন
     function showUI() {
-        document.getElementById("ui-overlay").style.opacity = "1";
-        clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(hideUI, 8000); // ৮ সেকেন্ড পর মেনু ভ্যানিশ হবে
+        const ui = document.getElementById("ui-overlay");
+        ui.style.opacity = "1";
+        resetTimer();
     }
 
     function hideUI() {
         document.getElementById("ui-overlay").style.opacity = "0";
+    }
+
+    function resetTimer() {
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(hideUI, 5000); // ৫ সেকেন্ড পর হাইড হবে
     }
 
     fetchM3U();
