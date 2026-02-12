@@ -3,145 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Android TV Pro</title>
+    <title>Global TV Pro - Best Edition</title>
     
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        :root { --primary: #ff0000; --bg: #000; }
-        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; font-family: sans-serif; }
+        :root { --primary: #e50914; --bg: #000; }
+        body { background: var(--bg); color: #fff; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
 
-        /* ভিডিও প্লেয়ার এলাকা */
-        .video-wrapper { width: 100%; height: 100vh; position: absolute; top: 0; left: 0; }
+        /* Full Screen Video Player */
+        #video-container { width: 100%; height: 100vh; background: #000; position: absolute; top: 0; left: 0; }
         .video-js { width: 100% !important; height: 100% !important; }
 
-        /* চ্যানেল লিস্ট */
-        .channel-list { 
-            position: absolute; bottom: 0; width: 100%; height: 30vh;
-            display: flex; overflow-x: auto; padding: 20px 40px; gap: 20px; 
-            background: linear-gradient(to top, rgba(0,0,0,1), transparent);
-            align-items: center; transition: 0.5s; z-index: 99;
+        /* UI Overlays */
+        .channel-overlay { 
+            position: absolute; bottom: 0; width: 100%; height: 32vh;
+            display: flex; overflow-x: auto; padding: 25px 40px; gap: 20px; 
+            background: linear-gradient(0deg, rgba(0,0,0,1) 30%, transparent);
+            align-items: center; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99;
             scroll-behavior: smooth;
         }
 
-        .channel-card {
-            min-width: 220px; height: 130px; background: rgba(40,40,40,0.8);
-            border-radius: 15px; border: 4px solid #333; position: relative;
+        .card {
+            min-width: 220px; height: 130px; background: rgba(30,30,30,0.85);
+            border-radius: 15px; border: 4px solid #444; position: relative;
             cursor: pointer; outline: none; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        /* রিমোট ফোকাস ও দুলন্ত স্টার */
-        .channel-card:focus { border-color: var(--primary); transform: scale(1.1); background: #111; }
+        /* TV Focus Effect */
+        .card:focus { border-color: var(--primary); transform: scale(1.1); background: #1a1a1a; box-shadow: 0 0 30px rgba(229, 9, 20, 0.4); }
         
+        /* Star Icon for Favorite */
         .fav-star { 
-            position: absolute; top: 10px; right: 10px; color: #ffca28; 
-            font-size: 1.5rem; display: none; animation: dangle 2s infinite ease-in-out;
+            position: absolute; top: 12px; right: 12px; color: #ffca28; 
+            font-size: 1.5rem; display: none; animation: swing 2s infinite ease-in-out;
         }
         .is-fav .fav-star { display: block; }
 
-        @keyframes dangle {
-            0%, 100% { transform: rotate(-10deg); }
-            50% { transform: rotate(10deg); }
-        }
+        @keyframes swing { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
 
-        .channel-list::-webkit-scrollbar { display: none; }
-        .hide-ui { transform: translateY(100%); }
+        .channel-overlay::-webkit-scrollbar { display: none; }
+        .ui-hidden { transform: translateY(110%); }
+
+        /* Loading Spinner */
+        #loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2rem; color: var(--primary); z-index: 100; display: none;
+        }
     </style>
 </head>
-<body onclick="showUI()">
+<body onclick="wakeUI()">
 
-<div class="video-wrapper">
-    <video id="tv-player" class="video-js vjs-default-skin" controls preload="auto" autoplay data-setup='{}'></video>
+<div id="video-container">
+    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" preload="auto" autoplay muted playsinline></video>
+    <div id="loader"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>
 </div>
 
-<div class="channel-list" id="channelList"></div>
+<div class="channel-overlay" id="listContainer"></div>
 
 <script>
-    const playlistUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    let player = videojs('tv-player');
-    let channels = [], favorites = JSON.parse(localStorage.getItem('favs')) || [];
-    let uiTimer, pressTimer;
+    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+    const player = videojs('tv-player', {
+        controls: false,
+        fluid: true,
+        autoplay: true,
+        userActions: { doubleClick: true }
+    });
 
-    async function loadApp() {
+    let channels = [], favorites = JSON.parse(localStorage.getItem('fav_list')) || [];
+    let hideTimeout, longPressTimer;
+
+    async function startApp() {
         try {
-            const res = await fetch(playlistUrl);
+            const res = await fetch(m3uUrl);
             const data = await res.text();
-            const lines = data.split('\n');
-            
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].startsWith('#EXTINF')) {
-                    const name = lines[i].split(',')[1] || "Channel";
-                    const url = lines[i + 1]?.trim();
-                    if(url) channels.push({ name, url });
-                }
-            }
-            renderUI();
-        } catch (e) { alert("প্লেলিস্ট লোড হচ্ছে না!"); }
+            parseList(data);
+        } catch (e) { console.error("Error loading playlist"); }
     }
 
-    function renderUI() {
-        const list = document.getElementById('channelList');
+    function parseList(data) {
+        const lines = data.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('#EXTINF')) {
+                const name = lines[i].split(',')[1] || "Channel";
+                const url = lines[i + 1]?.trim();
+                if(url) channels.push({ name, url });
+            }
+        }
+        buildUI();
+    }
+
+    function buildUI() {
+        const list = document.getElementById('listContainer');
         list.innerHTML = '';
+        
+        // Favorites on Top
+        const sorted = [...channels].sort((a,b) => favorites.includes(b.url) - favorites.includes(a.url));
 
-        // ফেভারিট চ্যানেলগুলোকে শুরুতে নিয়ে আসা
-        let sortedChannels = [...channels].sort((a, b) => {
-            return favorites.includes(b.url) - favorites.includes(a.url);
-        });
-
-        sortedChannels.forEach((ch, index) => {
-            const isFav = favorites.includes(ch.url);
+        sorted.forEach((ch, idx) => {
             const card = document.createElement('div');
-            card.className = `channel-card ${isFav ? 'is-fav' : ''}`;
+            card.className = `card ${favorites.includes(ch.url) ? 'is-fav' : ''}`;
             card.tabIndex = 0;
-            card.innerHTML = `<i class="fa-solid fa-star fav-star"></i><div style="font-weight:bold">${ch.name}</div>`;
+            card.innerHTML = `<i class="fa-solid fa-star fav-star"></i><div style="font-size:1.1rem; font-weight:bold; padding:10px;">${ch.name}</div>`;
 
+            // Auto Play on Remote Nav
             card.onfocus = () => {
-                showUI();
-                player.src({ type: 'application/x-mpegURL', src: ch.url });
-                player.play();
+                wakeUI();
+                playStream(ch.url);
                 card.scrollIntoView({ behavior: "smooth", inline: "center" });
             };
 
-            // লং প্রেস লজিক (রিমোটের OK বাটন ১ সেকেন্ড ধরে রাখলে)
-            card.addEventListener('keydown', (e) => {
-                showUI();
-                if (e.key === 'Enter') {
-                    pressTimer = setTimeout(() => toggleFav(ch.url), 1000);
+            // Long Press & Navigation
+            card.onkeydown = (e) => {
+                wakeUI();
+                if(e.key === 'Enter') {
+                    longPressTimer = setTimeout(() => toggleFav(ch.url), 800);
                 }
-                if (e.key === 'ArrowRight') card.nextSibling?.focus();
-                if (e.key === 'ArrowLeft') card.previousSibling?.focus();
-            });
-
-            card.addEventListener('keyup', (e) => {
-                if (e.key === 'Enter') clearTimeout(pressTimer);
-            });
+                if(e.key === 'ArrowRight') card.nextSibling?.focus();
+                if(e.key === 'ArrowLeft') card.previousSibling?.focus();
+            };
+            card.onkeyup = (e) => { if(e.key === 'Enter') clearTimeout(longPressTimer); };
 
             list.appendChild(card);
         });
 
-        // প্রথম চ্যানেলে ফোকাস
-        setTimeout(() => document.querySelector('.channel-card').focus(), 1000);
+        // First Focus
+        setTimeout(() => document.querySelector('.card')?.focus(), 500);
+    }
+
+    function playStream(url) {
+        document.getElementById('loader').style.display = 'block';
+        player.src({ type: 'application/x-mpegURL', src: url });
+        player.play().then(() => {
+            document.getElementById('loader').style.display = 'none';
+        }).catch(() => {
+            document.getElementById('loader').style.display = 'none';
+        });
     }
 
     function toggleFav(url) {
         if (favorites.includes(url)) favorites = favorites.filter(f => f !== url);
         else favorites.push(url);
-        localStorage.setItem('favs', JSON.stringify(favorites));
-        renderUI(); // লিস্ট রিফ্রেশ
+        localStorage.setItem('fav_list', JSON.stringify(favorites));
+        buildUI();
     }
 
-    function showUI() {
-        document.getElementById('channelList').classList.remove('hide-ui');
-        clearTimeout(uiTimer);
-        uiTimer = setTimeout(() => {
-            document.getElementById('channelList').classList.add('hide-ui');
-        }, 7000);
+    function wakeUI() {
+        document.getElementById('listContainer').classList.remove('ui-hidden');
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(() => {
+            document.getElementById('listContainer').classList.add('ui-hidden');
+        }, 6000);
     }
 
-    loadApp();
+    startApp();
 </script>
 </body>
 </html>
