@@ -13,10 +13,10 @@
             margin: 0;
             background: #000;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* স্ক্রিন স্ক্রল বন্ধ */
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden; /* স্ক্রিন স্ক্রল বন্ধ রাখতে */
         }
-        
+
         #player {
             position: absolute;
             top: 0;
@@ -26,66 +26,67 @@
             z-index: 1;
         }
 
-        /* চ্যানেল লিস্টের জন্য কন্টেইনার */
+        /* চ্যানেল লিস্টের নিচের অংশ */
         .overlay {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 35%; /* টিভির জন্য একটু বড় এরিয়া */
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            height: 40%;
+            background: linear-gradient(transparent, rgba(0,0,0,0.95));
             z-index: 2;
             display: flex;
             align-items: flex-end;
-            padding-bottom: 30px;
+            padding-bottom: 40px;
         }
 
         .channel-row {
             display: flex;
-            gap: 20px;
-            padding: 0 50px;
+            gap: 25px;
+            padding: 0 60px;
             overflow-x: auto;
-            scroll-behavior: smooth; /* রিমোট নেভিগেশনের জন্য স্মুথ স্ক্রলিং */
+            scroll-behavior: smooth; /* রিমোট নেভিগেশনের জন্য */
             width: 100%;
         }
 
-        /* স্ক্রলবার লুকানোর জন্য */
         .channel-row::-webkit-scrollbar {
-            display: none;
+            display: none; /* স্ক্রলবার লুকানো */
         }
 
         .channel-card {
-            flex: 0 0 220px;
-            height: 120px;
+            flex: 0 0 240px;
+            height: 140px;
             background: #1a1a1a;
-            border-radius: 12px;
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 600;
             text-align: center;
             outline: none;
-            border: 4px solid transparent;
-            transition: all 0.3s ease;
+            border: 5px solid transparent;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        /* রিমোট দিয়ে সিলেক্ট করলে যেমন দেখাবে */
+        /* রিমোট ফোকাস স্টাইল - এটি টিভির জন্য সবচেয়ে জরুরি */
         .channel-card:focus {
-            border-color: #e50914;
-            transform: scale(1.15);
-            background: #e50914;
-            box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
+            border-color: #ff0000; /* লাল বর্ডার */
+            transform: scale(1.18); /* কার্ড বড় হবে */
+            background: #333;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
             z-index: 10;
         }
 
         .channel-logo {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 10px;
+            width: 70px;
+            height: 70px;
+            margin-bottom: 12px;
             object-fit: contain;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -107,10 +108,9 @@
         try {
             const res = await fetch(m3uUrl);
             const text = await res.text();
-
             const lines = text.trim().split("\n");
+            
             let channels = [];
-
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].startsWith("#EXTINF")) {
                     const info = lines[i];
@@ -119,15 +119,15 @@
                     if (nextUrl && !nextUrl.startsWith("#")) {
                         const name = info.split(",")[1]?.trim() || "Unknown Channel";
                         const logoMatch = info.match(/tvg-logo="([^"]+)"/);
-                        const logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/100";
+                        const logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/150x100?text=TV";
 
                         channels.push({ name, url: nextUrl, logo });
                     }
                 }
             }
             renderChannels(channels);
-        } catch (error) {
-            console.error("Error fetching M3U:", error);
+        } catch (e) {
+            console.error("Error loading M3U:", e);
         }
     }
 
@@ -135,37 +135,40 @@
         const list = document.getElementById("channelList");
         list.innerHTML = "";
 
-        channels.forEach((ch, index) => {
+        channels.forEach((ch) => {
             const card = document.createElement("div");
             card.className = "channel-card";
-            card.tabIndex = 0; // এটি রিমোট ফোকাসের জন্য অত্যন্ত গুরুত্বপূর্ণ
+            card.tabIndex = 0; // রিমোটের ফোকাস ধরার জন্য এটি আবশ্যক
 
-            // লোগো যোগ করা (যদি থাকে)
             card.innerHTML = `
-                <img class="channel-logo" src="${ch.logo}" alt="">
+                <img class="channel-logo" src="${ch.logo}">
                 <span>${ch.name}</span>
             `;
 
-            // রিমোট দিয়ে সিলেক্ট করলে চ্যানেল প্লে হবে
+            // যখন কোনো চ্যানেলে ফোকাস করা হবে (রিমোট দিয়ে)
             card.onfocus = () => {
                 player.src({ type: 'application/x-mpegURL', src: ch.url });
                 player.play();
                 
-                // রিমোট দিয়ে স্ক্রল করার সময় অটো-সেন্টার করা
+                // চ্যানেলটি স্ক্রিনের মাঝখানে আনবে
                 card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+            };
+
+            // রিমোটের 'OK' বাটন প্রেস করলে প্লে হবে
+            card.onclick = () => {
+                player.play();
             };
 
             list.appendChild(card);
         });
 
-        // টিভি অ্যাপ লোড হওয়ার পর প্রথম চ্যানেল ফোকাস করা
+        // ১ সেকেন্ড পর প্রথম চ্যানেলটি অটোমেটিক ফোকাস হবে
         setTimeout(() => {
-            const firstCard = document.querySelector(".channel-card");
-            if (firstCard) firstCard.focus();
+            document.querySelector(".channel-card")?.focus();
         }, 1000);
     }
 
-    // টিভির রিমোটের কী-বোর্ড ইভেন্ট হ্যান্ডল করা
+    // টিভির রিমোটের কি-বোর্ড কন্ট্রোল হ্যান্ডলিং
     document.addEventListener('keydown', function(e) {
         const active = document.activeElement;
         if (e.key === "ArrowRight") {
