@@ -1,21 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zeno TV - Live Channels</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeno TV - Android TV Edition</title>
 
-<link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
-<script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+    <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
+    <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 
-<style>
-body{margin:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden;}
-#player{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:1;}
-.overlay{position:absolute;bottom:0;left:0;width:100%;background:rgba(0,0,0,0.8);padding:20px;z-index:2;}
-.channel-row{display:flex;gap:15px;overflow-x:auto;}
-.channel-card{flex:0 0 180px;height:90px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;outline:none;border:2px solid transparent;transition:0.2s;}
-.channel-card:focus{border-color:#e50914;transform:scale(1.1);background:#333;}
-</style>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* স্ক্রিন স্ক্রল বন্ধ */
+        }
+        
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* চ্যানেল লিস্টের জন্য কন্টেইনার */
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%; /* টিভির জন্য একটু বড় এরিয়া */
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            z-index: 2;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 30px;
+        }
+
+        .channel-row {
+            display: flex;
+            gap: 20px;
+            padding: 0 50px;
+            overflow-x: auto;
+            scroll-behavior: smooth; /* রিমোট নেভিগেশনের জন্য স্মুথ স্ক্রলিং */
+            width: 100%;
+        }
+
+        /* স্ক্রলবার লুকানোর জন্য */
+        .channel-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .channel-card {
+            flex: 0 0 220px;
+            height: 120px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            border: 4px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* রিমোট দিয়ে সিলেক্ট করলে যেমন দেখাবে */
+        .channel-card:focus {
+            border-color: #e50914;
+            transform: scale(1.15);
+            background: #e50914;
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.6);
+            z-index: 10;
+        }
+
+        .channel-logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 10px;
+            object-fit: contain;
+        }
+    </style>
 </head>
 
 <body>
@@ -23,64 +95,87 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;overflow:hidden;
 <video id="player" class="video-js vjs-default-skin" autoplay playsinline></video>
 
 <div class="overlay">
-<div class="channel-row" id="channelList"></div>
+    <div class="channel-row" id="channelList">
+        </div>
 </div>
 
 <script>
-const m3uUrl="https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2";
+    const m3uUrl = "https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2";
+    const player = videojs('player');
 
-const player=videojs('player');
+    async function fetchM3U() {
+        try {
+            const res = await fetch(m3uUrl);
+            const text = await res.text();
 
-async function fetchM3U(){
-  const res=await fetch(m3uUrl);
-  const text=await res.text();
+            const lines = text.trim().split("\n");
+            let channels = [];
 
-  // প্রথমে সব স্পেস/লাইন ব্রেক ঠিক করা
-  const clean = text.replace(/ #EXTINF/g,"\n#EXTINF");
-  const lines = clean.trim().split("\n");
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith("#EXTINF")) {
+                    const info = lines[i];
+                    const nextUrl = lines[i + 1]?.trim();
 
-  let channels=[];
+                    if (nextUrl && !nextUrl.startsWith("#")) {
+                        const name = info.split(",")[1]?.trim() || "Unknown Channel";
+                        const logoMatch = info.match(/tvg-logo="([^"]+)"/);
+                        const logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/100";
 
-  for(let i=0;i<lines.length;i++){
-    if(lines[i].startsWith("#EXTINF")){
-      const info=lines[i];
-      const nextUrl = lines[i+1]?.trim();
-
-      if(nextUrl && !nextUrl.startsWith("#")){
-        const name = info.split(",")[1]?.trim();
-        const logoMatch = info.match(/tvg-logo="([^"]+)"/);
-        const logo = logoMatch ? logoMatch[1] : "";
-
-        channels.push({name, url: nextUrl, logo});
-      }
+                        channels.push({ name, url: nextUrl, logo });
+                    }
+                }
+            }
+            renderChannels(channels);
+        } catch (error) {
+            console.error("Error fetching M3U:", error);
+        }
     }
-  }
-  renderChannels(channels);
-}
 
-function renderChannels(channels){
-  const list = document.getElementById("channelList");
-  list.innerHTML="";
+    function renderChannels(channels) {
+        const list = document.getElementById("channelList");
+        list.innerHTML = "";
 
-  channels.forEach(ch => {
-    const card = document.createElement("div");
-    card.className="channel-card";
-    card.tabIndex=0;
-    card.innerText=ch.name;
+        channels.forEach((ch, index) => {
+            const card = document.createElement("div");
+            card.className = "channel-card";
+            card.tabIndex = 0; // এটি রিমোট ফোকাসের জন্য অত্যন্ত গুরুত্বপূর্ণ
 
-    card.onfocus = () => {
-      player.src({type:'application/x-mpegURL',src:ch.url});
-      player.play();
-    };
+            // লোগো যোগ করা (যদি থাকে)
+            card.innerHTML = `
+                <img class="channel-logo" src="${ch.logo}" alt="">
+                <span>${ch.name}</span>
+            `;
 
-    list.appendChild(card);
-  });
+            // রিমোট দিয়ে সিলেক্ট করলে চ্যানেল প্লে হবে
+            card.onfocus = () => {
+                player.src({ type: 'application/x-mpegURL', src: ch.url });
+                player.play();
+                
+                // রিমোট দিয়ে স্ক্রল করার সময় অটো-সেন্টার করা
+                card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+            };
 
-  // Auto focus first
-  setTimeout(()=>document.querySelector(".channel-card")?.focus(),300);
-}
+            list.appendChild(card);
+        });
 
-fetchM3U();
+        // টিভি অ্যাপ লোড হওয়ার পর প্রথম চ্যানেল ফোকাস করা
+        setTimeout(() => {
+            const firstCard = document.querySelector(".channel-card");
+            if (firstCard) firstCard.focus();
+        }, 1000);
+    }
+
+    // টিভির রিমোটের কী-বোর্ড ইভেন্ট হ্যান্ডল করা
+    document.addEventListener('keydown', function(e) {
+        const active = document.activeElement;
+        if (e.key === "ArrowRight") {
+            active.nextElementSibling?.focus();
+        } else if (e.key === "ArrowLeft") {
+            active.previousElementSibling?.focus();
+        }
+    });
+
+    fetchM3U();
 </script>
 
 </body>
