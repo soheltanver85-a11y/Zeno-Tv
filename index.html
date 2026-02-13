@@ -9,35 +9,35 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        /* প্লেয়ারের ওপর কোনো ফোকাস আউটলাইন থাকবে না */
         .video-js:focus { outline: none !important; }
 
         #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
 
+        /* ইউআই লেআউট - এখানে চ্যানেলগুলোকে নিচে নামানোর জন্য প্যাডিং বাড়ানো হয়েছে */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
         
+        /* ট্যাব কন্টেইনার - এটি স্টিকি থাকবে */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
-            padding: 12px 20px; background: linear-gradient(to right, #111, #000); 
-            position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #222; 
+            padding: 15px 20px; background: rgba(5, 5, 5, 0.95); 
+            position: sticky; top: 0; z-index: 150; border-bottom: 1px solid #222; 
             flex-wrap: nowrap; overflow-x: auto;
         }
         
         .zeno-logo { 
-            font-weight: 900; font-size: 22px; letter-spacing: 1px;
+            font-weight: 900; font-size: 24px; letter-spacing: 1px;
             background: linear-gradient(45deg, #fff 30%, #ff0000 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-            animation: pulse-glow 2s infinite; margin-right: 15px; flex-shrink: 0;
-            font-style: italic;
+            margin-right: 20px; flex-shrink: 0; font-style: italic;
         }
-        @keyframes pulse-glow { 0% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.03); } 100% { opacity: 0.8; } }
 
         .tab, .apk-btn, .recent-pill { 
-            padding: 8px 16px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
-            outline: none; font-size: 13px; font-weight: bold; display: flex; align-items: center; 
+            padding: 10px 20px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
+            outline: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; 
             gap: 8px; white-space: nowrap; flex-shrink: 0; background: #222; color: #eee;
         }
 
@@ -46,23 +46,19 @@
             box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4); color: white; outline: none;
         }
 
-        .apk-btn { background: linear-gradient(45deg, #00c853, #64dd17); color: #000; text-decoration: none; }
-        .recent-box { display: flex; align-items: center; gap: 8px; margin: 0 5px; }
-        .recent-pill { background: #1a1a1a; border: 1px solid #333; padding: 5px 10px; }
-        #search { margin-left: auto; background:#222; color:white; border:none; padding:10px 18px; border-radius:50px; outline: none; width: 120px; font-size: 13px; }
+        /* মেইন কন্টেন্ট - ট্যাব বার থেকে চ্যানেলগুলোকে নিচে নামানোর জন্য মার্জিন */
+        #main-content { padding: 25px 20px 80px 20px; } 
 
-        #main-content { padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
         
-        .ch-index { position: absolute; top: 0; left: 0; background: linear-gradient(45deg, #0044cc, #0088ff); color: white; font-size: 20px; font-weight: bold; padding: 4px 10px; border-bottom-right-radius: 15px; z-index: 5; }
-        .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 12px; overflow: hidden; }
-        .logo-box img { width: 80%; height: 80%; object-fit: contain; }
-        .name { padding: 10px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ch-index { position: absolute; top: 0; left: 0; background: linear-gradient(45deg, #0044cc, #0088ff); color: white; font-size: 18px; font-weight: bold; padding: 4px 12px; border-bottom-right-radius: 15px; z-index: 5; }
+        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; overflow: hidden; }
+        .logo-box img { width: 85%; height: 85%; object-fit: contain; }
+        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); }
-        .m-btn { padding: 10px 40px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: bold; font-size: 18px; margin: 10px; }
     </style>
 </head>
 <body>
@@ -79,8 +75,7 @@
         <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
-        <div id="recent-box" class="recent-box"></div>
-        <input type="text" id="search" placeholder="🔍 খুঁজুন..." readonly tabindex="0">
+        <div id="recent-box" class="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
     <div id="main-content">
@@ -91,18 +86,14 @@
 <div id="fav-modal">
     <div class="modal-content">
         <h2 id="modal-text"></h2>
-        <button id="confirm-no" class="m-btn" style="background:#444;">না</button>
-        <button id="confirm-yes" class="m-btn" style="background:var(--accent);">হ্যাঁ</button>
+        <button id="confirm-no" class="m-btn" style="background:#444; padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">না</button>
+        <button id="confirm-yes" class="m-btn" style="background:var(--accent); padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">হ্যাঁ</button>
     </div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
-    const player = videojs('tv-player', {
-        userActions: { hotkeys: true },
-        controlBar: { children: ['playToggle', 'volumePanel', 'currentTimeDisplay', 'timeDivider', 'durationDisplay', 'progressControl', 'fullscreenToggle'] }
-    });
-
+    const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('tv_recents')) || [];
@@ -157,19 +148,13 @@
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
         currentPlayingUrl = ch.url;
-        
-        // রিসেন্ট লিস্ট আপডেট
         recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 5);
         localStorage.setItem('tv_recents', JSON.stringify(recents));
         renderRecentPills();
     }
 
-    // এটিই আসল ফাংশন যা ফোকাসকে কার্ডে ফিরিয়ে আনবে
     function returnFocusToCard() {
-        // প্লেয়ারকে ব্লাকআউট করা যাতে সে ফোকাস না ধরে রাখে
         player.el().blur(); 
-        document.body.focus();
-
         setTimeout(() => {
             const targetCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
             if (targetCard) {
@@ -179,28 +164,20 @@
         }, 200);
     }
 
-    // রিমোট কী হ্যান্ডলার
     window.addEventListener('keydown', (e) => {
-        const key = e.key;
-        const code = e.keyCode;
-
-        // ব্যাক বাটন (Android TV / WebOS / Tizen)
-        if (key === 'Backspace' || key === 'Escape' || code === 461 || code === 10009 || code === 27) {
+        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 461 || e.keyCode === 10009) {
             if (document.getElementById('fav-modal').style.display === 'flex') {
                 closeModal();
                 e.preventDefault();
             } else if (player.isFullscreen()) {
                 player.exitFullscreen();
-                // ফুলস্ক্রিন থেকে বের হওয়ার সাথে সাথে কার্ডে ফোকাস পাঠানো
                 returnFocusToCard();
                 e.preventDefault();
                 e.stopPropagation();
             }
         }
-
-        // নম্বর বাটন লজিক
-        if (key >= '0' && key <= '9') {
-            numBuffer += key;
+        if (e.key >= '0' && e.key <= '9') {
+            numBuffer += e.key;
             const osd = document.getElementById('osd-number');
             osd.innerText = numBuffer; osd.style.display = 'block';
             clearTimeout(numTimeout);
@@ -212,17 +189,7 @@
         }
     });
 
-    // প্লেয়ারের ফুলস্ক্রিন চেঞ্জ ইভেন্ট ট্র্যাকিং
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen()) {
-            returnFocusToCard();
-        }
-    });
-
-    function closeModal() {
-        document.getElementById('fav-modal').style.display = 'none';
-        returnFocusToCard();
-    }
+    player.on('fullscreenchange', () => { if (!player.isFullscreen()) returnFocusToCard(); });
 
     function renderRecentPills() {
         const box = document.getElementById('recent-box');
@@ -234,7 +201,7 @@
                 pill.className = 'recent-pill';
                 pill.tabIndex = 0;
                 pill.innerHTML = `<span>${ch.name.substring(0,8)}</span>`;
-                pill.onkeydown = (e) => { if(e.key === 'Enter') playChannel(ch); };
+                pill.onclick = () => playChannel(ch);
                 box.appendChild(pill);
             }
         });
