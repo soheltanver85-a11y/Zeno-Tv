@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - All Features Included</title>
+    <title>Zeno TV Premium - Ultimate Remote Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
@@ -12,7 +12,9 @@
         /* প্লেয়ার সেকশন */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        .vjs-control:focus { background: var(--accent) !important; outline: none; }
+        
+        /* রিমোট ফোকাস ইন্ডিকেটর (প্লেয়ার কন্ট্রোল) */
+        .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; transform: scale(1.1); }
 
         /* ইউআই লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); }
@@ -40,8 +42,10 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
+        /* ফোকাস স্টাইল */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
 
         #main-content { padding: 15px; } 
@@ -69,8 +73,8 @@
 
 <div id="ui-overlay">
     <div id="search-overlay">
-        <input type="text" id="search-input" placeholder="সার্চ করুন..." oninput="searchChannels(this.value)">
-        <button class="tab" onclick="toggleSearch(false)" style="margin-left:10px;">X</button>
+        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
+        <button class="tab" onclick="toggleSearch(false)" style="margin-left:10px;">বন্ধ</button>
     </div>
 
     <div class="tabs-container">
@@ -78,7 +82,7 @@
         <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
-        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_APK_LINK'">📥 APK</div>
+        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
@@ -133,10 +137,9 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ক্লিক করলে প্লে
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস (Long Press) লজিক: ১ সেকেন্ড ধরে রাখলে ফুলস্ক্রিন প্লে
+            // লং প্রেস (Long Press) -> ফুলস্ক্রিন
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
@@ -147,11 +150,10 @@
 
             card.onmousedown = card.ontouchstart = startPress;
             card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
-            
-            // রিমোট এন্টার লং প্রেস
+
             card.onkeydown = (e) => {
                 if (e.key === 'Enter') startPress();
-                if (e.key === 'f') toggleFavorite(ch); // 'f' কি দিয়ে ফেভারিট
+                if (e.key === 'f' || e.key === 'F') toggleFavorite(ch); // 'f' দিয়ে ফেভারিট
             };
             card.onkeyup = (e) => { if (e.key === 'Enter') endPress(); };
 
@@ -163,8 +165,6 @@
         currentCh = ch;
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
-        
-        // রিসেন্ট ৪টি চ্যানেল
         recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 4);
         localStorage.setItem('zeno_recents', JSON.stringify(recents));
         renderRecentPills();
@@ -206,7 +206,7 @@
         renderGrid(list);
     }
 
-    // ব্যাক নেভিগেশন সিঙ্ক
+    // ব্যাক আসলে ওই চ্যানেলে ফোকাস
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen() && currentCh) {
             setTimeout(() => {
@@ -216,8 +216,14 @@
         }
     });
 
+    // --- চূড়ান্ত রিমোট নেভিগেশন ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
+        const playBtn = document.querySelector('.vjs-play-control');
+        const volBtn = document.querySelector('.vjs-volume-panel');
+        const fullBtn = document.querySelector('.vjs-fullscreen-control');
+
+        // নম্বর কি প্যাড
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -229,14 +235,39 @@
                 numBuffer = ""; osd.style.display = 'none';
             }, 1500);
         }
-        
-        // রিমোট নেভিগেশন
-        if (e.key === 'ArrowUp') {
-            if (active.classList.contains('card')) document.querySelector('.tab').focus();
-            else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) player.controlBar.playToggle.focus();
-        } else if (e.key === 'ArrowDown') {
-            if (active.closest('.vjs-control-bar')) document.querySelector('.tab').focus();
-            else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) document.querySelector('.card').focus();
+
+        switch(e.key) {
+            case 'ArrowUp':
+                if (active.classList.contains('card')) {
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill') || active.classList.contains('search-btn')) {
+                    e.preventDefault();
+                    player.userActive(true);
+                    playBtn.focus();
+                }
+                break;
+
+            case 'ArrowDown':
+                if (active.closest('.vjs-control-bar')) {
+                    e.preventDefault();
+                    player.userActive(false);
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) {
+                    document.querySelector('.card').focus();
+                }
+                break;
+
+            case 'ArrowRight':
+                if (active === playBtn) { e.preventDefault(); volBtn.focus(); }
+                else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); fullBtn.focus(); }
+                else if (active === fullBtn) { e.preventDefault(); playBtn.focus(); }
+                break;
+
+            case 'ArrowLeft':
+                if (active === fullBtn) { e.preventDefault(); volBtn.focus(); }
+                else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); playBtn.focus(); }
+                else if (active === playBtn) { e.preventDefault(); fullBtn.focus(); }
+                break;
         }
     });
 
