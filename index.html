@@ -3,40 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro TV - Final Fix</title>
+    <title>Pro TV Ultimate Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
 
-        /* ভিডিও ও ঘড়ি */
-        #player-wrapper { height: 45vh; background: #000; position: relative; }
+        /* ১. বড় প্লেয়ার ডিজাইন */
+        #player-wrapper { height: 55vh; background: #000; position: relative; border-bottom: 3px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .video-js { width: 100% !important; height: 100% !important; }
         #tv-clock { position: absolute; top: 15px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 8px; font-size: 18px; z-index: 10; font-family: monospace; }
 
-        /* OSD নম্বর */
-        #osd-number {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9); color: white; font-size: 100px;
-            padding: 20px 60px; border-radius: 25px; display: none; z-index: 10000;
-            font-weight: bold; box-shadow: 0 0 50px rgba(0,0,0,0.7);
-        }
+        /* নম্বর OSD */
+        #osd-number { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 0, 0, 0.9); color: white; font-size: 100px; padding: 20px 60px; border-radius: 25px; display: none; z-index: 10000; font-weight: bold; }
 
-        /* গ্রিড ও ট্যাব */
-        .tabs-container { display: flex; align-items: center; gap: 15px; padding: 10px 40px; background: #111; }
-        .tab { padding: 10px 25px; background: #222; border-radius: 25px; cursor: pointer; border: 3px solid transparent; }
-        #search { margin-left: auto; background:#222; color:white; border:none; padding:10px 20px; border-radius:20px; outline: none; }
-        #main-content { height: 55vh; overflow-y: auto; padding: 20px 40px; scroll-behavior: smooth; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 25px; padding-bottom: 50px; }
+        /* ট্যাব ও সার্চ */
+        .tabs-container { display: flex; align-items: center; gap: 15px; padding: 12px 40px; background: #111; }
+        .tab { padding: 10px 25px; background: #222; border-radius: 25px; cursor: pointer; border: 3px solid transparent; outline: none; transition: 0.2s; }
+        #search { margin-left: auto; background:#222; color:white; border:2px solid transparent; padding:10px 20px; border-radius:20px; outline: none; }
+        #search:focus { border-color: var(--accent); background: #333; }
 
-        /* কার্ড ও ফোকাস */
-        .card { background: var(--card); border-radius: 12px; position: relative; transition: 0.3s; cursor: pointer; border: 3px solid transparent; }
-        .tab:focus, .card:focus, .m-btn:focus, #search:focus { 
-            background: var(--accent); border-color: white; outline: none; transform: scale(1.1); box-shadow: 0 0 20px rgba(255,0,0,0.6);
-        }
+        /* গ্রিড ও কার্ড */
+        #main-content { height: 45vh; overflow-y: auto; padding: 20px 40px; scroll-behavior: smooth; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; padding-bottom: 50px; }
+        
+        .card { background: var(--card); border-radius: 12px; position: relative; transition: 0.3s; cursor: pointer; border: 3px solid transparent; outline: none; }
+        .tab:focus, .card:focus, .m-btn:focus { background: var(--accent); border-color: white; transform: scale(1.08); box-shadow: 0 0 20px rgba(255,0,0,0.6); }
 
-        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 18px; font-weight: bold; padding: 4px 12px; border-bottom-right-radius: 12px; border-top-left-radius: 10px; z-index: 10; }
-        .fav-star { position: absolute; top: 8px; right: 8px; font-size: 22px; color: rgba(255,255,255,0.1); z-index: 10; }
+        /* বড় চ্যানেল নাম্বার (বামে) ও স্টার (ডানে) */
+        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 20px; font-weight: bold; padding: 4px 14px; border-bottom-right-radius: 12px; border-top-left-radius: 10px; z-index: 10; }
+        .fav-star { position: absolute; top: 8px; right: 8px; font-size: 24px; color: rgba(255,255,255,0.1); z-index: 10; }
         .is-favorite .fav-star { color: var(--fav-color) !important; text-shadow: 0 0 10px rgba(255, 204, 0, 0.8); }
 
         .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 5px; border-radius: 8px; overflow: hidden; }
@@ -45,8 +41,8 @@
 
         /* মোডাল ফিক্স */
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-content { background: #222; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); }
-        .m-btn { padding: 10px 30px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: bold; font-size: 18px; border: 3px solid transparent; }
+        .modal-content { background: #222; padding: 40px; border-radius: 20px; text-align: center; border: 3px solid var(--accent); }
+        .m-btn { padding: 12px 40px; border-radius: 10px; border: 4px solid transparent; cursor: pointer; color: white; font-weight: bold; font-size: 20px; outline: none; margin: 0 10px; transition: 0.2s; }
     </style>
 </head>
 <body>
@@ -73,7 +69,7 @@
 <div id="fav-modal">
     <div class="modal-content">
         <h2 id="modal-text">ফেভারেট লিস্টে যোগ করবেন?</h2>
-        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px;">
+        <div style="display: flex; justify-content: center; margin-top: 30px;">
             <button id="confirm-yes" class="m-btn" tabindex="0" style="background:var(--accent);">হ্যাঁ</button>
             <button id="confirm-no" class="m-btn" tabindex="0" style="background:#444;">না</button>
         </div>
@@ -85,8 +81,7 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
-    let numBuffer = "", numTimeout = null, currentCategory = 'All';
-    let lastClickTime = 0;
+    let numBuffer = "", numTimeout = null, currentCategory = 'All', lastClickTime = 0;
 
     setInterval(() => { document.getElementById('tv-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
@@ -149,52 +144,55 @@
         else player.exitFullscreen();
     }
 
-    // ব্যাক বাটন ও কী-বোর্ড হ্যান্ডলিং
+    // ব্যাক বাটন ও নম্বর শর্টকাট
     window.addEventListener('keydown', (e) => {
-        // ব্যাক বাটন (Backspace/Escape) দিয়ে ফুলস্ক্রিন থেকে ফেরা
         if (e.key === 'Backspace' || e.key === 'Escape') {
-            if (document.getElementById('fav-modal').style.display === 'flex') {
-                closeModal();
-                e.preventDefault();
-            } else if (player.isFullscreen()) {
-                player.exitFullscreen();
-                e.preventDefault(); // অ্যাপ বন্ধ হওয়া রোধ করবে
-            }
+            if (document.getElementById('fav-modal').style.display === 'flex') closeModal();
+            else if (player.isFullscreen()) player.exitFullscreen();
+            e.preventDefault();
         }
 
-        // ফুলস্ক্রিনে ডাবল ক্লিক করে ফেরার লজিক
-        if (player.isFullscreen() && (e.key === 'Enter' || e.key === 'OK')) {
-            const currentTime = new Date().getTime();
-            if (currentTime - lastClickTime < 300) player.exitFullscreen();
-            lastClickTime = currentTime;
-        }
-
-        // নম্বর কন্ট্রোল
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
-            osd.innerText = numBuffer;
-            osd.style.display = 'block';
+            osd.innerText = numBuffer; osd.style.display = 'block';
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const idx = parseInt(numBuffer) - 1;
                 if (allChannels[idx]) {
                     playChannel(allChannels[idx].url);
-                    const cards = document.querySelectorAll('.card');
-                    if(cards[idx]) { cards[idx].focus(); cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                    renderGrid(allChannels);
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('.card');
+                        if(cards[idx]) { cards[idx].focus(); cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                    }, 500);
                 }
                 numBuffer = ""; osd.style.display = 'none';
             }, 1500);
         }
     });
 
-    // মোডাল বাটন লজিক
+    // সার্চ বক্স কিবোর্ড কন্ট্রোল
+    const searchInput = document.getElementById('search');
+    searchInput.onkeydown = (e) => { if (e.key === 'Enter' || e.key === 'OK') searchInput.readOnly = false; };
+    searchInput.oninput = () => {
+        const query = searchInput.value.toLowerCase();
+        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(query)));
+    };
+    searchInput.onblur = () => { searchInput.readOnly = true; };
+
+    // মোডাল নেভিগেশন ফিক্স
     function showFavModal(ch) {
         window.selectedChannel = ch;
         document.getElementById('modal-text').innerText = favorites.includes(ch.url) ? "ফেভারেট থেকে বাদ দিবেন?" : "ফেভারেট লিস্টে যোগ করবেন?";
         document.getElementById('fav-modal').style.display = 'flex';
         setTimeout(() => document.getElementById('confirm-yes').focus(), 200);
     }
+
+    document.getElementById('fav-modal').onkeydown = (e) => {
+        if (e.key === 'ArrowRight') document.getElementById('confirm-no').focus();
+        if (e.key === 'ArrowLeft') document.getElementById('confirm-yes').focus();
+    };
 
     document.getElementById('confirm-yes').onclick = () => {
         const url = window.selectedChannel.url;
