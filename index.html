@@ -9,9 +9,23 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         
+        /* প্লেয়ারের মাঝখানের প্লে/পজ বাটন */
+        #play-center-btn {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80px; height: 80px; background: rgba(255, 0, 0, 0.9);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            z-index: 110; cursor: pointer; border: 4px solid transparent; outline: none; transition: 0.3s;
+        }
+        #play-center-btn:focus { border-color: white; transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 20px #ff0000; }
+        #play-center-btn svg { width: 40px; height: 40px; fill: white; }
+
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
+
+        /* ইউআই লেআউট */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
         
         .tabs-container { 
@@ -23,25 +37,25 @@
 
         .tab, .apk-btn, .recent-pill { 
             padding: 8px 15px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
-            outline: none; font-size: 14px; font-weight: bold; background: #222; color: #eee; display: flex; align-items: center; gap: 5px;
+            outline: none; font-size: 14px; font-weight: bold; background: #222; color: #eee; display: flex; align-items: center; gap: 8px;
         }
         .tab:focus, .card:focus, .apk-btn:focus, .recent-pill:focus, #search-input:focus { 
             background: var(--accent); border-color: #fff; transform: scale(1.05); outline: none; 
         }
 
         .apk-btn { background: #00c853; color: #000; text-decoration: none; }
-        #search-input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 50px; width: 150px; outline: none; }
+        #search-input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 50px; width: 120px; outline: none; }
 
-        .recent-pill img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
+        .recent-pill img { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; }
 
         #main-content { padding: 25px 20px 80px 20px; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 14px; padding: 3px 8px; border-bottom-right-radius: 10px; z-index: 5; }
         
-        /* ফেভারিট স্টার স্টাইল */
-        .fav-star { position: absolute; top: 5px; right: 8px; color: var(--fav-color); font-size: 20px; display: none; text-shadow: 0 0 5px #000; z-index: 6; }
+        /* সিরিয়াল নম্বর ও ফেভারিট স্টার */
+        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 14px; padding: 3px 8px; border-bottom-right-radius: 10px; z-index: 5; }
+        .fav-star { position: absolute; top: 5px; right: 8px; color: var(--fav-color); font-size: 20px; display: none; z-index: 10; text-shadow: 0 0 5px #000; }
         .is-fav .fav-star { display: block; }
 
         .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; }
@@ -50,19 +64,24 @@
 
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); }
-        .m-btn { padding: 10px 30px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: bold; margin: 10px; }
     </style>
 </head>
 <body>
 
+<div id="osd-number"></div>
+
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-big-play-centered" controls preload="auto" tabindex="-1"></video>
+    <video id="tv-player" class="video-js vjs-big-play-centered" preload="auto" tabindex="-1"></video>
+    <div id="play-center-btn" tabindex="0">
+        <svg id="play-icon" viewBox="0 0 24 24" style="display:none;"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </div>
 </div>
 
 <div id="ui-overlay">
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
+        <div class="tab" id="default-tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
         <a href="#" class="apk-btn" tabindex="0">📥 APK</a>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
@@ -76,19 +95,41 @@
 
 <div id="fav-modal">
     <div class="modal-content">
-        <h2 id="modal-text">ফেভারিট লিস্টে যোগ করবেন?</h2>
-        <button id="confirm-no" class="m-btn" style="background:#444;" tabindex="0">না</button>
-        <button id="confirm-yes" class="m-btn" style="background:var(--accent);" tabindex="0">হ্যাঁ</button>
+        <h2 id="modal-text"></h2>
+        <button id="confirm-no" style="background:#444; padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;" tabindex="0">না</button>
+        <button id="confirm-yes" style="background:var(--accent); padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;" tabindex="0">হ্যাঁ</button>
     </div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
-    const player = videojs('tv-player');
+    const player = videojs('tv-player', { controls: false });
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('tv_recents')) || [];
     let numBuffer = "", numTimeout = null, zeroTimer = null, currentPlayingUrl = ""; 
+
+    const playBtn = document.getElementById('play-center-btn');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+
+    function togglePlay() {
+        if (player.paused()) {
+            player.play();
+            playIcon.style.display = "none";
+            pauseIcon.style.display = "block";
+        } else {
+            player.pause();
+            playIcon.style.display = "block";
+            pauseIcon.style.display = "none";
+        }
+    }
+
+    playBtn.onclick = togglePlay;
+    playBtn.onkeydown = (e) => {
+        if(e.key === 'Enter' || e.key === 'OK') togglePlay();
+        if(e.key === 'ArrowDown') { document.getElementById('default-tab').focus(); e.preventDefault(); }
+    };
 
     async function init() {
         try {
@@ -129,15 +170,17 @@
             
             card.onkeydown = (e) => {
                 if (e.key === 'Enter' || e.key === 'OK') {
-                    if (currentPlayingUrl === ch.url) player.requestFullscreen();
+                    if (player.isFullscreen()) togglePlay();
+                    else if (currentPlayingUrl === ch.url) player.requestFullscreen();
                     else playChannel(ch);
                     e.preventDefault();
                 }
-                // '০' চেপে ধরে ফেভারিট
+                if (e.key === 'ArrowUp') {
+                    const rect = card.getBoundingClientRect();
+                    if (rect.top < 650) { document.getElementById('default-tab').focus(); e.preventDefault(); }
+                }
                 if (e.key === '0') {
-                    if (!zeroTimer) {
-                        zeroTimer = setTimeout(() => showFavModal(ch), 1000);
-                    }
+                    if (!zeroTimer) zeroTimer = setTimeout(() => showFavModal(ch), 1000);
                 }
             };
             card.onkeyup = (e) => { if (e.key === '0') { clearTimeout(zeroTimer); zeroTimer = null; } };
@@ -149,7 +192,9 @@
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
         currentPlayingUrl = ch.url;
-        recents = [ch, ...recents.filter(u => u.url !== ch.url)].slice(0, 5);
+        playIcon.style.display = "none";
+        pauseIcon.style.display = "block";
+        recents = [ch, ...recents.filter(u => u.url !== ch.url)].slice(0, 4);
         localStorage.setItem('tv_recents', JSON.stringify(recents));
         renderRecentPills();
     }
@@ -160,16 +205,52 @@
         document.getElementById('modal-text').innerText = isFav ? "ফেভারিট থেকে বাদ দিবেন?" : "ফেভারিট লিস্টে যোগ করবেন?";
         modal.style.display = 'flex';
         document.getElementById('confirm-yes').focus();
-
         document.getElementById('confirm-yes').onclick = () => {
             if (isFav) favorites = favorites.filter(f => f !== ch.url);
             else favorites.push(ch.url);
             localStorage.setItem('tv_favs', JSON.stringify(favorites));
             modal.style.display = 'none';
             renderGrid(allChannels);
+            returnFocusToCard();
         };
-        document.getElementById('confirm-no').onclick = () => modal.style.display = 'none';
+        document.getElementById('confirm-no').onclick = () => { modal.style.display = 'none'; returnFocusToCard(); };
     }
+
+    function returnFocusToCard() {
+        player.el().blur(); 
+        setTimeout(() => {
+            const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
+            if (target) { target.focus(); target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }, 200);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if ((e.key === 'Backspace' || e.keyCode === 461) && player.isFullscreen()) {
+            player.exitFullscreen();
+            returnFocusToCard();
+            e.preventDefault();
+        }
+        if (e.key >= '0' && e.key <= '9' && !zeroTimer) {
+            numBuffer += e.key;
+            const osd = document.getElementById('osd-number');
+            osd.innerText = numBuffer; osd.style.display = 'block';
+            clearTimeout(numTimeout);
+            numTimeout = setTimeout(() => {
+                const idx = parseInt(numBuffer) - 1;
+                if (allChannels[idx]) playChannel(allChannels[idx]);
+                numBuffer = ""; osd.style.display = 'none';
+            }, 1500);
+        }
+    });
+
+    document.querySelectorAll('.tab, .apk-btn, #search-input').forEach(el => {
+        el.onkeydown = (e) => {
+            if(e.key === 'ArrowUp') { playBtn.focus(); e.preventDefault(); }
+            if(e.key === 'ArrowDown') { const f = document.querySelector('.card'); if(f) f.focus(); e.preventDefault(); }
+        };
+    });
+
+    player.on('fullscreenchange', () => { if (!player.isFullscreen()) returnFocusToCard(); });
 
     function renderRecentPills() {
         const box = document.getElementById('recent-box');
@@ -184,11 +265,9 @@
         });
     }
 
-    // সার্চ লজিক
     document.getElementById('search-input').oninput = (e) => {
         const val = e.target.value.toLowerCase();
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(val));
-        renderGrid(filtered);
+        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(val)));
     };
 
     function filterCategory(cat) {
