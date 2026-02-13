@@ -16,7 +16,7 @@
         /* প্লেয়ারের মাঝখানের প্লে/পজ বাটন */
         #play-center-btn {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80px; height: 80px; background: rgba(255, 0, 0, 0.9);
+            width: 80px; height: 80px; background: rgba(255, 0, 0, 0.8);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             z-index: 110; cursor: pointer; border: 4px solid transparent; outline: none; transition: 0.3s;
         }
@@ -33,21 +33,16 @@
         
         .zeno-logo { font-weight: 900; font-size: 24px; color: var(--accent); margin-right: 20px; font-style: italic; }
 
-        .tab, .card { outline: none; transition: 0.2s; border: 3px solid transparent; }
-        
-        /* ট্যাব ও কার্ডের ফোকাস স্টাইল */
-        .tab:focus { background: var(--accent); border-color: #fff; border-radius: 50px; transform: scale(1.1); }
-        .card:focus { border-color: var(--accent); transform: scale(1.05); background: #222; }
-
-        .tab { padding: 10px 20px; background: #222; border-radius: 50px; cursor: pointer; font-weight: bold; }
+        .tab, .card { outline: none; transition: 0.2s; }
+        .tab:focus, .card:focus { background: var(--accent); border-color: #fff; transform: scale(1.05); outline: none; }
 
         #main-content { padding: 25px 20px 80px 20px; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; position: relative; overflow: hidden; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; }
         
         .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; }
         .logo-box img { width: 85%; height: 85%; object-fit: contain; }
-        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; }
+        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
@@ -55,15 +50,15 @@
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-big-play-centered" preload="auto" tabindex="-1"></video>
     <div id="play-center-btn" tabindex="0">
-        <svg id="play-icon" viewBox="0 0 24 24" style="display:none;"><path d="M8 5v14l11-7z"/></svg>
-        <svg id="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="pause-icon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
     </div>
 </div>
 
 <div id="ui-overlay">
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        <div class="tab" tabindex="0" id="default-tab" onclick="filterCategory('All')">📺 সব</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
     </div>
 
@@ -74,7 +69,7 @@
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
-    const player = videojs('tv-player', { controls: false });
+    const player = videojs('tv-player', { controls: false }); // ডিফল্ট কন্ট্রোল বন্ধ
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], currentPlayingUrl = "";
 
@@ -82,7 +77,7 @@
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
 
-    // প্লে/পজ ফাংশন
+    // প্লে/পজ লজিক
     function togglePlay() {
         if (player.paused()) {
             player.play();
@@ -96,28 +91,7 @@
     }
 
     playBtn.onclick = togglePlay;
-    playBtn.onkeydown = (e) => {
-        if(e.key === 'Enter' || e.key === 'OK') togglePlay();
-        if(e.key === 'ArrowDown') {
-            document.getElementById('default-tab').focus(); // প্লেয়ার থেকে নিচে নামলে ট্যাবে যাবে
-            e.preventDefault();
-        }
-    };
-
-    // ট্যাব থেকে নেভিগেশন
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.onkeydown = (e) => {
-            if(e.key === 'ArrowUp') {
-                playBtn.focus(); // ট্যাব থেকে উপরে গেলে প্লেয়ার বাটনে যাবে
-                e.preventDefault();
-            }
-            if(e.key === 'ArrowDown') {
-                const firstCard = document.querySelector('.card');
-                if(firstCard) firstCard.focus(); // ট্যাব থেকে নিচে নামলে চ্যানেলে যাবে
-                e.preventDefault();
-            }
-        };
-    });
+    playBtn.onkeydown = (e) => { if(e.key === 'Enter' || e.key === 'OK') togglePlay(); };
 
     async function init() {
         try {
@@ -153,10 +127,12 @@
                     else playChannel(ch);
                     e.preventDefault();
                 }
+                // গ্রিড থেকে উপরে গেলে প্লেয়ার বাটনে ফোকাস যাবে
                 if (e.key === 'ArrowUp') {
+                    // যদি এটি প্রথম সারির কার্ড হয় তবেই উপরে যাবে
                     const rect = card.getBoundingClientRect();
-                    if (rect.top < 650) { // যদি উপরের সারিতে থাকে
-                        document.getElementById('default-tab').focus(); // চ্যানেলের উপর থেকে ট্যাবে যাবে
+                    if (rect.top < 600) { 
+                        playBtn.focus();
                         e.preventDefault();
                     }
                 }
@@ -173,6 +149,7 @@
         pauseIcon.style.display = "block";
     }
 
+    // ফুলস্ক্রিন থেকে ফিরলে কার্ডে ফোকাস
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen()) {
             setTimeout(() => {
