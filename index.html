@@ -9,14 +9,12 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
 
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
         
-        /* প্রিমিয়াম ট্যাব বার */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
             padding: 12px 20px; background: linear-gradient(to right, #111, #000); 
@@ -47,11 +45,9 @@
         }
 
         .apk-btn { background: linear-gradient(45deg, #00c853, #64dd17); color: #000; text-decoration: none; }
-
         .recent-box { display: flex; align-items: center; gap: 8px; margin: 0 5px; }
         .recent-pill { background: #1a1a1a; border: 1px solid #333; padding: 5px 10px; }
         .recent-pill img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
-
         #search { margin-left: auto; background:#222; color:white; border:none; padding:10px 18px; border-radius:50px; outline: none; width: 120px; font-size: 13px; flex-shrink: 0; border: 1px solid #333; }
 
         #main-content { padding: 20px; }
@@ -87,23 +83,11 @@
 <div id="ui-overlay">
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        
-        <div class="tab" tabindex="0" onclick="filterCategory('All')">
-            <span>📺</span> সব
-        </div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">
-            <span>⭐</span> ফেভ
-        </div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Sports')">
-            <span>⚽</span> স্পোর্টস
-        </div>
-        
-        <a href="APK_DOWNLOAD_LINK" class="apk-btn" tabindex="0">
-            <span>📥</span> APK
-        </a>
-        
+        <div class="tab" tabindex="0" onclick="filterCategory('All')"><span>📺</span> সব</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')"><span>⭐</span> ফেভ</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Sports')"><span>⚽</span> স্পোর্টস</div>
+        <a href="APK_DOWNLOAD_LINK" class="apk-btn" tabindex="0"><span>📥</span> APK</a>
         <div id="recent-box" class="recent-box"></div>
-
         <input type="text" id="search" placeholder="🔍 খুঁজুন..." readonly tabindex="0">
     </div>
 
@@ -128,8 +112,8 @@
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('tv_recents')) || [];
-    let numBuffer = "", numTimeout = null, sourceTimer = null, lastClickTime = 0;
-    let currentPlayingUrl = ""; // বর্তমানে চলা চ্যানেলের URL ট্র্যাক করার জন্য
+    let numBuffer = "", numTimeout = null, sourceTimer = null;
+    let currentPlayingUrl = ""; 
 
     async function init() {
         try {
@@ -158,16 +142,18 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.tabIndex = 0;
-            card.setAttribute('data-url', ch.url); // প্রতিটি কার্ডে ডাটা সেট করা হচ্ছে
+            card.setAttribute('data-url', ch.url); 
             const idx = allChannels.findIndex(i => i.url === ch.url) + 1;
             card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
             
             card.onkeydown = (e) => {
                 if (e.key === 'Enter' || e.key === 'OK') {
-                    const now = Date.now();
-                    if (now - lastClickTime < 300) toggleFullscreen();
-                    else playChannel(ch);
-                    lastClickTime = now;
+                    // যদি এই চ্যানেলটি আগে থেকেই প্লে থাকে, তবে শুধু ফুলস্ক্রিন করো
+                    if (currentPlayingUrl === ch.url) {
+                        player.requestFullscreen();
+                    } else {
+                        playChannel(ch);
+                    }
                     e.preventDefault();
                 }
             };
@@ -175,37 +161,40 @@
         });
     }
 
-    function renderRecentPills() {
-        const box = document.getElementById('recent-box');
-        box.innerHTML = '';
-        recents.slice(0, 4).forEach(url => {
-            const ch = allChannels.find(c => c.url === url);
-            if (ch) {
-                const pill = document.createElement('div');
-                pill.className = 'recent-pill';
-                pill.tabIndex = 0;
-                pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
-                pill.onkeydown = (e) => { if(e.key === 'Enter' || e.key === 'OK') playChannel(ch); };
-                box.appendChild(pill);
-            }
-        });
-    }
-
     function playChannel(ch) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
-        currentPlayingUrl = ch.url; // এখানে বর্তমান চ্যানেলের URL সেভ করা হচ্ছে
+        currentPlayingUrl = ch.url; 
         recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 5);
         localStorage.setItem('tv_recents', JSON.stringify(recents));
         renderRecentPills();
     }
 
-    function toggleFullscreen() {
-        if (!player.isFullscreen()) player.requestFullscreen();
-        else player.exitFullscreen();
+    // ফোকাস ঠিক রাখার ফাংশন
+    function focusCurrentCard() {
+        setTimeout(() => {
+            const activeCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
+            if (activeCard) {
+                activeCard.focus();
+                activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 150);
     }
 
     window.addEventListener('keydown', (e) => {
+        // ব্যাক বাটন লজিক (রিমোটের জন্য keyCode সহ)
+        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 461 || e.keyCode === 10009) {
+            if (document.getElementById('fav-modal').style.display === 'flex') {
+                closeModal();
+                e.preventDefault();
+            } else if (player.isFullscreen()) {
+                player.exitFullscreen();
+                focusCurrentCard(); // ব্যাক করলে ফোকাস ওই চ্যানেলেই থাকবে
+                e.preventDefault();
+            }
+        }
+
+        // নম্বর বাটন লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -217,43 +206,23 @@
                 numBuffer = ""; osd.style.display = 'none';
             }, 1500);
         }
+
+        // ফেভারিট শর্টকাট
         if (e.key === 'Source' || e.keyCode === 424 || e.keyCode === 18) {
             if (!sourceTimer) {
                 sourceTimer = setTimeout(() => {
                     const active = document.activeElement;
                     if (active && active.classList.contains('card')) {
-                        const name = active.querySelector('.name').innerText;
-                        const ch = allChannels.find(c => c.name === name);
+                        const url = active.getAttribute('data-url');
+                        const ch = allChannels.find(c => c.url === url);
                         if (ch) showFavModal(ch);
                     }
-                }, 1200);
+                }, 1000);
             }
-        }
-        if (e.key === 'Backspace' || e.key === 'Escape') {
-            if (document.getElementById('fav-modal').style.display === 'flex') {
-                closeModal();
-            } else if (player.isFullscreen()) {
-                player.exitFullscreen();
-                // ফুলস্ক্রিন থেকে বের হয়ে ওই চ্যানেলের লোগোতে ফোকাস করার লজিক
-                setTimeout(() => {
-                    const activeCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-                    if (activeCard) {
-                        activeCard.focus();
-                        activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 350); 
-            }
-            e.preventDefault();
         }
     });
 
     window.addEventListener('keyup', (e) => { if (e.key === 'Source' || e.keyCode === 424 || e.keyCode === 18) { clearTimeout(sourceTimer); sourceTimer = null; } });
-
-    document.getElementById('fav-modal').onkeydown = (e) => {
-        if (e.key === 'ArrowRight') { document.getElementById('confirm-yes').focus(); e.preventDefault(); }
-        else if (e.key === 'ArrowLeft') { document.getElementById('confirm-no').focus(); e.preventDefault(); }
-        else if (e.key === 'Enter' || e.key === 'OK') { document.activeElement.click(); e.preventDefault(); }
-    };
 
     function showFavModal(ch) {
         window.selectedChannel = ch;
@@ -274,8 +243,23 @@
     document.getElementById('confirm-no').onclick = closeModal;
     function closeModal() { 
         document.getElementById('fav-modal').style.display = 'none'; 
-        const activeCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-        if (activeCard) activeCard.focus(); 
+        focusCurrentCard();
+    }
+
+    function renderRecentPills() {
+        const box = document.getElementById('recent-box');
+        box.innerHTML = '';
+        recents.slice(0, 4).forEach(url => {
+            const ch = allChannels.find(c => c.url === url);
+            if (ch) {
+                const pill = document.createElement('div');
+                pill.className = 'recent-pill';
+                pill.tabIndex = 0;
+                pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
+                pill.onkeydown = (e) => { if(e.key === 'Enter' || e.key === 'OK') playChannel(ch); };
+                box.appendChild(pill);
+            }
+        });
     }
 
     function filterCategory(cat) {
@@ -283,9 +267,6 @@
                    (cat === 'Sports') ? allChannels.filter(c => c.group.toLowerCase().includes('sports') || c.name.toLowerCase().includes('sports')) : allChannels;
         renderGrid(list);
     }
-
-    const searchInput = document.getElementById('search');
-    searchInput.oninput = () => renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(searchInput.value.toLowerCase())));
 
     init();
 </script>
