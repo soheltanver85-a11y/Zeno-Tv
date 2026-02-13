@@ -3,78 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Ultimate UI</title>
+    <title>Zeno TV - Premium UI</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --fav-color: #ffcc00; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
+        /* প্লেয়ার সেকশন */
         #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        
-        #play-center-btn {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80px; height: 80px; background: rgba(255, 0, 0, 0.9);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            z-index: 110; cursor: pointer; border: 4px solid transparent; outline: none; transition: 0.3s;
-        }
-        #play-center-btn:focus { border-color: white; transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 20px #ff0000; }
-        #play-center-btn svg { width: 40px; height: 40px; fill: white; }
+        .video-js:focus { outline: none !important; }
 
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
+
+        /* ইউআই লেআউট - এখানে চ্যানেলগুলোকে নিচে নামানোর জন্য প্যাডিং বাড়ানো হয়েছে */
         #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
+        
+        /* ট্যাব কন্টেইনার - এটি স্টিকি থাকবে */
         .tabs-container { 
-            display: flex; align-items: center; gap: 10px; padding: 15px 20px; 
-            background: rgba(5, 5, 5, 0.95); position: sticky; top: 0; z-index: 150; border-bottom: 1px solid #222; 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 15px 20px; background: rgba(5, 5, 5, 0.95); 
+            position: sticky; top: 0; z-index: 150; border-bottom: 1px solid #222; 
+            flex-wrap: nowrap; overflow-x: auto;
         }
         
-        .zeno-logo { font-weight: 900; font-size: 24px; color: var(--accent); margin-right: 15px; font-style: italic; }
-
-        .tab, .apk-btn, .recent-pill, #search-input { 
-            padding: 8px 15px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
-            outline: none; font-size: 14px; font-weight: bold; background: #222; color: #eee; display: flex; align-items: center; gap: 8px;
-        }
-        .tab:focus, .card:focus, .apk-btn:focus, .recent-pill:focus, #search-input:focus, .m-btn:focus { 
-            background: var(--accent); border-color: #fff; transform: scale(1.05); outline: none; 
+        .zeno-logo { 
+            font-weight: 900; font-size: 24px; letter-spacing: 1px;
+            background: linear-gradient(45deg, #fff 30%, #ff0000 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            margin-right: 20px; flex-shrink: 0; font-style: italic;
         }
 
-        #search-input { width: 120px; background: #1a1a1a; }
-        .recent-pill img { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; }
+        .tab, .apk-btn, .recent-pill { 
+            padding: 10px 20px; border-radius: 50px; cursor: pointer; border: 2px solid transparent; 
+            outline: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; 
+            gap: 8px; white-space: nowrap; flex-shrink: 0; background: #222; color: #eee;
+        }
 
+        .tab:focus, .card:focus, .apk-btn:focus, .recent-pill:focus, #search:focus { 
+            background: var(--accent); border-color: #fff; transform: scale(1.05); 
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4); color: white; outline: none;
+        }
+
+        /* মেইন কন্টেন্ট - ট্যাব বার থেকে চ্যানেলগুলোকে নিচে নামানোর জন্য মার্জিন */
         #main-content { padding: 25px 20px 80px 20px; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; }
-        
-        .ch-index { position: absolute; top: 0; left: 0; background: #0044cc; color: white; font-size: 14px; padding: 3px 8px; border-bottom-right-radius: 10px; z-index: 5; }
-        .fav-star { position: absolute; top: 5px; right: 8px; color: var(--fav-color); font-size: 20px; display: none; z-index: 10; text-shadow: 0 0 5px #000; }
-        .is-fav .fav-star { display: block; }
 
-        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 25px; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 4px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
+        
+        .ch-index { position: absolute; top: 0; left: 0; background: linear-gradient(45deg, #0044cc, #0088ff); color: white; font-size: 18px; font-weight: bold; padding: 4px 12px; border-bottom-right-radius: 15px; z-index: 5; }
+        .logo-box { height: 100px; display: flex; align-items: center; justify-content: center; background: #222; margin: 6px; border-radius: 12px; overflow: hidden; }
         .logo-box img { width: 85%; height: 85%; object-fit: contain; }
-        .name { padding: 10px; font-size: 14px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         #fav-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); }
-        .m-btn { padding: 10px 40px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: bold; margin: 10px; display: inline-block; outline: none; }
     </style>
 </head>
 <body>
 
+<div id="osd-number"></div>
+
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-big-play-centered" preload="auto" tabindex="-1"></video>
-    <div id="play-center-btn" tabindex="0">
-        <svg id="play-icon" viewBox="0 0 24 24" style="display:none;"><path d="M8 5v14l11-7z"/></svg>
-        <svg id="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-    </div>
+    <video id="tv-player" class="video-js vjs-big-play-centered" controls preload="auto" tabindex="-1"></video>
 </div>
 
 <div id="ui-overlay">
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        <div class="tab" id="default-tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভ</div>
-        <a href="#" class="apk-btn" tabindex="0">📥 APK</a>
-        <div id="recent-box" style="display:flex; gap:8px;"></div>
-        <input type="text" id="search-input" placeholder="🔍 খুঁজুন..." tabindex="0" readonly>
+        <div class="tab" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
+        <div id="recent-box" class="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
     <div id="main-content">
@@ -85,47 +86,32 @@
 <div id="fav-modal">
     <div class="modal-content">
         <h2 id="modal-text"></h2>
-        <button id="confirm-no" class="m-btn" style="background:#444;" tabindex="0">না</button>
-        <button id="confirm-yes" class="m-btn" style="background:var(--accent);" tabindex="0">হ্যাঁ</button>
+        <button id="confirm-no" class="m-btn" style="background:#444; padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">না</button>
+        <button id="confirm-yes" class="m-btn" style="background:var(--accent); padding:10px 30px; border:none; color:white; border-radius:10px; margin:10px;">হ্যাঁ</button>
     </div>
 </div>
 
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 <script>
-    const player = videojs('tv-player', { controls: false });
+    const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    
-    let allChannels = [];
-    let favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
+    let allChannels = [], favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('tv_recents')) || [];
-    let zeroTimer = null, currentPlayingUrl = "";
-
-    const playBtn = document.getElementById('play-center-btn');
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-
-    function togglePlay() {
-        if (player.paused()) { player.play(); playIcon.style.display = "none"; pauseIcon.style.display = "block"; } 
-        else { player.pause(); playIcon.style.display = "block"; pauseIcon.style.display = "none"; }
-    }
-
-    playBtn.onkeydown = (e) => {
-        if(e.key === 'Enter' || e.key === 'OK') togglePlay();
-        if(e.key === 'ArrowDown') { document.getElementById('default-tab').focus(); e.preventDefault(); }
-    };
+    let numBuffer = "", numTimeout = null, currentPlayingUrl = ""; 
 
     async function init() {
         try {
             const res = await fetch(m3uUrl);
             const data = await res.text();
             const lines = data.split('\n');
-            let name = "", logo = "";
+            let name = "", logo = "", group = "";
             lines.forEach(line => {
                 if (line.includes('#EXTINF:')) {
                     name = line.split(',').pop().trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                    group = (line.match(/group-title="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
-                    allChannels.push({ name, url: line.trim(), logo });
+                    allChannels.push({ name, url: line.trim(), logo, group });
                 }
             });
             renderGrid(allChannels);
@@ -137,30 +123,23 @@
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
         list.forEach(ch => {
-            const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
-            card.className = `card ${isFav ? 'is-fav' : ''}`;
+            card.className = 'card';
             card.tabIndex = 0;
-            card.setAttribute('data-url', ch.url);
+            card.setAttribute('data-url', ch.url); 
             const idx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.innerHTML = `<div class="ch-index">${idx}</div><div class="fav-star">★</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
+            card.innerHTML = `<div class="ch-index">${idx}</div><div class="logo-box"><img src="${ch.logo}"></div><div class="name">${ch.name}</div>`;
             
             card.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === 'OK') {
-                    if (player.isFullscreen()) togglePlay();
-                    else if (currentPlayingUrl === ch.url) player.requestFullscreen();
-                    else playChannel(ch);
+                if (e.key === 'Enter' || e.key === 'OK' || e.keyCode === 13) {
+                    if (currentPlayingUrl === ch.url) {
+                        player.requestFullscreen();
+                    } else {
+                        playChannel(ch);
+                    }
                     e.preventDefault();
                 }
-                if (e.key === 'ArrowUp') {
-                    const rect = card.getBoundingClientRect();
-                    if (rect.top < 650) { document.getElementById('default-tab').focus(); e.preventDefault(); }
-                }
-                if (e.key === '0') {
-                    if (!zeroTimer) zeroTimer = setTimeout(() => showFavModal(ch), 1000);
-                }
             };
-            card.onkeyup = (e) => { if (e.key === '0') { clearTimeout(zeroTimer); zeroTimer = null; } };
             grid.appendChild(card);
         });
     }
@@ -169,67 +148,62 @@
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
         currentPlayingUrl = ch.url;
-        playIcon.style.display = "none";
-        pauseIcon.style.display = "block";
-        
-        recents = [ch, ...recents.filter(u => u.url !== ch.url)].slice(0, 5);
+        recents = [ch.url, ...recents.filter(u => u !== ch.url)].slice(0, 5);
         localStorage.setItem('tv_recents', JSON.stringify(recents));
         renderRecentPills();
     }
 
-    function showFavModal(ch) {
-        const modal = document.getElementById('fav-modal');
-        const isFav = favorites.includes(ch.url);
-        document.getElementById('modal-text').innerText = isFav ? "ফেভারিট থেকে বাদ দিবেন?" : "ফেভারিট লিস্টে যোগ করবেন?";
-        modal.style.display = 'flex';
-        document.getElementById('confirm-yes').focus();
-
-        const handleFav = (confirm) => {
-            if (confirm) {
-                if (isFav) favorites = favorites.filter(f => f !== ch.url);
-                else favorites.push(ch.url);
-                localStorage.setItem('tv_favs', JSON.stringify(favorites));
-                renderGrid(allChannels);
-            }
-            modal.style.display = 'none';
-            returnFocusToCard();
-        };
-
-        document.getElementById('confirm-yes').onclick = () => handleFav(true);
-        document.getElementById('confirm-no').onclick = () => handleFav(false);
-    }
-
-    // সার্চ কিবোর্ড লজিক
-    const searchInput = document.getElementById('search-input');
-    searchInput.onkeydown = (e) => {
-        if (e.key === 'Enter' || e.key === 'OK') {
-            searchInput.readOnly = false;
-            searchInput.focus();
-        }
-        if (e.key === 'ArrowUp') { playBtn.focus(); e.preventDefault(); }
-        if (e.key === 'ArrowDown') { document.querySelector('.card').focus(); e.preventDefault(); }
-    };
-    searchInput.oninput = (e) => {
-        const val = e.target.value.toLowerCase();
-        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(val)));
-    };
-
     function returnFocusToCard() {
-        const target = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
-        if (target) { target.focus(); target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        player.el().blur(); 
+        setTimeout(() => {
+            const targetCard = document.querySelector(`.card[data-url="${currentPlayingUrl}"]`);
+            if (targetCard) {
+                targetCard.focus();
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 200);
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' || e.key === 'Escape' || e.keyCode === 461 || e.keyCode === 10009) {
+            if (document.getElementById('fav-modal').style.display === 'flex') {
+                closeModal();
+                e.preventDefault();
+            } else if (player.isFullscreen()) {
+                player.exitFullscreen();
+                returnFocusToCard();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }
+        if (e.key >= '0' && e.key <= '9') {
+            numBuffer += e.key;
+            const osd = document.getElementById('osd-number');
+            osd.innerText = numBuffer; osd.style.display = 'block';
+            clearTimeout(numTimeout);
+            numTimeout = setTimeout(() => {
+                const idx = parseInt(numBuffer) - 1;
+                if (allChannels[idx]) playChannel(allChannels[idx]);
+                numBuffer = ""; osd.style.display = 'none';
+            }, 1500);
+        }
+    });
+
+    player.on('fullscreenchange', () => { if (!player.isFullscreen()) returnFocusToCard(); });
 
     function renderRecentPills() {
         const box = document.getElementById('recent-box');
         box.innerHTML = '';
-        recents.forEach(ch => {
-            const pill = document.createElement('div');
-            pill.className = 'recent-pill';
-            pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
-            pill.onclick = () => playChannel(ch);
-            pill.onkeydown = (e) => { if(e.key==='ArrowUp') playBtn.focus(); if(e.key==='ArrowDown') document.querySelector('.card').focus(); };
-            box.appendChild(pill);
+        recents.slice(0, 3).forEach(url => {
+            const ch = allChannels.find(c => c.url === url);
+            if (ch) {
+                const pill = document.createElement('div');
+                pill.className = 'recent-pill';
+                pill.tabIndex = 0;
+                pill.innerHTML = `<span>${ch.name.substring(0,8)}</span>`;
+                pill.onclick = () => playChannel(ch);
+                box.appendChild(pill);
+            }
         });
     }
 
