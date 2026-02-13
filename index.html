@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro TV - Search & Fullscreen</title>
+    <title>Pro TV - Smart TV Optimized</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
@@ -14,8 +14,7 @@
         .video-js { width: 100% !important; height: 100% !important; }
         
         /* ফুলস্ক্রিন মোড স্টাইল */
-        body.is-fullscreen #player-wrapper { height: 100vh; }
-        body.is-fullscreen .tabs-container, body.is-fullscreen #main-content { display: none; }
+        body.vjs-full-window #player-wrapper { height: 100vh; }
 
         /* ক্যাটাগরি ও সার্চ বার */
         .tabs-container {
@@ -66,7 +65,6 @@
     <div class="tab" tabindex="0" onclick="filterCategory('Hindi')">Hindi</div>
     
     <div class="search-box">
-        <i class="fas fa-search" style="font-size: 12px; margin-right: 5px; color: #888;"></i>
         <input type="text" id="search" placeholder="খুঁজুন..." oninput="searchChannel()">
     </div>
 </div>
@@ -82,17 +80,20 @@
     
     let allChannels = [];
     let favorites = JSON.parse(localStorage.getItem('tv_favs')) || [];
-    let currentCategory = 'All';
+    let pressTimer;
+    const LONG_PRESS_MS = 1000; // ১ সেকেন্ড চেপে ধরে রাখতে হবে
 
-    // অটো-রিকানেক্ট
+    // অটো-রিকানেক্ট লজিক
     player.on('error', () => {
         setTimeout(() => { player.src(player.src()); player.play(); }, 3000);
     });
 
     async function init() {
-        const res = await fetch(m3uUrl);
-        const data = await res.text();
-        parseM3U(data);
+        try {
+            const res = await fetch(m3uUrl);
+            const data = await res.text();
+            parseM3U(data);
+        } catch (e) { console.error("Data load failed", e); }
     }
 
     function parseM3U(data) {
@@ -113,15 +114,13 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, index) => {
+        list.forEach((ch) => {
             const card = document.createElement('div');
             card.className = `card ${favorites.includes(ch.url) ? 'is-favorite' : ''}`;
             card.tabIndex = 0;
             card.innerHTML = `<div class="fav-star">★</div><div class="logo-box">${ch.logo ? `<img data-src="${ch.logo}">` : `<span>${ch.name.charAt(0)}</span>`}</div><div class="name">${ch.name}</div>`;
             
             card.onclick = () => playChannel(ch.url);
-            card.ondblclick = () => toggleFullScreen(); // ডাবল ক্লিকে ফুলস্ক্রিন
-            
             grid.appendChild(card);
         });
         lazyLoad();
@@ -132,6 +131,7 @@
         player.play();
     }
 
+    // ফুলস্ক্রিন টগল ফাংশন
     function toggleFullScreen() {
         if (!player.isFullscreen()) {
             player.requestFullscreen();
@@ -140,11 +140,34 @@
         }
     }
 
-    // রিমোট বাটন হ্যান্ডলিং
+    // --- রিমোট বাটন হ্যান্ডলিং (Long Press & Back Button) ---
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') toggleFullScreen(); // আপ বাটন চাপলে ফুলস্ক্রিন
-        if (e.key === 'Escape') player.exitFullscreen();
+        // রিমোটের 'Up' বাটন চেপে ধরলে ফুলস্ক্রিন টগল হবে
+        if (e.key === 'ArrowUp') {
+            if (!pressTimer) {
+                pressTimer = setTimeout(() => {
+                    toggleFullScreen();
+                    pressTimer = null; 
+                }, LONG_PRESS_MS);
+            }
+        }
+
+        // রিমোটের 'Back' বা 'Backspace' চাপলে ফুলস্ক্রিন থেকে বের হবে
+        if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'BrowserBack') {
+            if (player.isFullscreen()) {
+                e.preventDefault(); 
+                player.exitFullscreen();
+            }
+        }
     });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowUp') {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
+    });
+    // -----------------------------------------------------
 
     function searchChannel() {
         const query = document.getElementById('search').value.toLowerCase();
@@ -153,10 +176,12 @@
     }
 
     function filterCategory(cat) {
-        currentCategory = cat;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-        const filtered = cat === 'All' ? allChannels : (cat === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : allChannels.filter(c => c.group.includes(cat) || c.name.includes(cat)));
+        if(event) event.target.classList.add('active');
+        
+        const filtered = cat === 'All' ? allChannels : 
+                        (cat === 'Favorite' ? allChannels.filter(c => favorites.includes(c.url)) : 
+                        allChannels.filter(c => c.group.includes(cat) || c.name.includes(cat)));
         renderGrid(filtered);
     }
 
