@@ -3,50 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Ultimate Remote UI</title>
+    <title>Zeno TV - Final Premium Pro</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
-        #player-wrapper { height: 50vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
+        #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
+        .vjs-control:focus { background: var(--accent) !important; outline: none; }
 
-        /* প্লেয়ার কন্ট্রোলস ফোকাস স্টাইল */
-        .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; }
-
-        /* ইউআই লেআউট */
-        #ui-overlay { margin-top: 50vh; height: 50vh; overflow-y: auto; background: var(--bg); }
+        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); }
         
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
-            padding: 15px 20px; background: rgba(5, 5, 5, 0.98); 
-            position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; 
+            padding: 10px 20px; background: rgba(5, 5, 5, 0.98); 
+            position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
         }
         
-        .zeno-logo { font-weight: 900; font-size: 28px; color: #ff0000; font-style: italic; margin-right: 15px; }
+        .zeno-logo { font-weight: 900; font-size: 24px; color: var(--accent); font-style: italic; margin-right: 10px; }
 
-        .tab, .search-btn, .apk-btn { 
+        .tab, .recent-pill { 
             padding: 8px 15px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
             background: #222; color: #eee; font-size: 13px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
         }
+        .recent-pill img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
 
-        /* ফোকাস স্টাইল */
-        .tab:focus, .search-btn:focus, .apk-btn:focus, .card:focus, .recent-pill:focus { 
+        .tab:focus, .recent-pill:focus, .card:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
         }
 
-        #main-content { padding: 20px 15px 80px 15px; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 15px; }
+        #main-content { padding: 15px 15px 80px 15px; } 
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; overflow: hidden; transition: 0.2s; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 11px; padding: 2px 6px; border-bottom-right-radius: 10px; }
-        .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; }
+        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 11px; padding: 2px 6px; border-bottom-right-radius: 10px; z-index: 5; }
+        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 6px; color: #ffd700; font-size: 14px; display: none; }
+        .is-fav .fav-star { display: block; }
 
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; }
+        .logo-box { height: 80px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
+        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
+        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 60px; padding: 10px 30px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -54,16 +54,15 @@
 <div id="osd-number"></div>
 
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
+    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" tabindex="-1"></video>
 </div>
 
 <div id="ui-overlay">
     <div class="tabs-container">
         <div class="zeno-logo">ZENO TV</div>
-        <div class="search-btn nav-item" tabindex="0">🔍 সার্চ</div>
-        <div class="tab nav-item" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
-        <div class="tab nav-item" tabindex="0" onclick="filterCategory('Sports')">⚽ স্পোর্টস</div>
-        <div class="apk-btn nav-item" tabindex="0">📥 APK</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('All')">📺 সব</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ প্রিয়</div>
+        <div id="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
     <div id="main-content">
@@ -76,8 +75,10 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    let allChannels = [];
-    let numBuffer = "", numTimeout = null;
+    let allChannels = [], currentCh = null;
+    let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
+    let recents = JSON.parse(localStorage.getItem('zeno_recents')) || [];
+    let numBuffer = "", numTimeout = null, longPressTimer = null;
 
     async function init() {
         try {
@@ -95,36 +96,88 @@
                 }
             });
             renderGrid(allChannels);
-        } catch(e) { console.error("Error loading M3U", e); }
+            renderRecentPills();
+        } catch(e) { console.error(e); }
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, index) => {
+        list.forEach(ch => {
+            const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
-            card.className = 'card nav-item';
+            card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
+            card.setAttribute('data-url', ch.url);
             card.innerHTML = `
-                <div class="ch-index">${index + 1}</div>
+                <div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div>
+                <div class="fav-star">⭐</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
+
+            // ডাবল ক্লিক লজিক
+            card.ondblclick = () => { playChannel(ch); player.requestFullscreen(); };
+            
+            // সিঙ্গেল ক্লিক
             card.onclick = () => playChannel(ch);
+
+            // লং প্রেস লজিক (রিমোট বা মাউস)
+            const startPress = () => { longPressTimer = setTimeout(() => { playChannel(ch); player.requestFullscreen(); }, 1000); };
+            const endPress = () => clearTimeout(longPressTimer);
+            card.onmousedown = card.ontouchstart = startPress;
+            card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
+
             grid.appendChild(card);
         });
     }
 
     function playChannel(ch) {
+        currentCh = ch;
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
+        
+        // রিসেন্ট লিস্ট আপডেট (৪টি রাখা হবে)
+        recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 4);
+        localStorage.setItem('zeno_recents', JSON.stringify(recents));
+        renderRecentPills();
     }
 
-    // --- রিমোট নেভিগেশন লজিক ---
+    function renderRecentPills() {
+        const box = document.getElementById('recent-box');
+        box.innerHTML = '';
+        recents.forEach(ch => {
+            const pill = document.createElement('div');
+            pill.className = 'recent-pill';
+            pill.tabIndex = 0;
+            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
+            pill.onclick = () => playChannel(ch);
+            box.appendChild(pill);
+        });
+    }
+
+    function toggleFavorite(ch) {
+        if (favorites.includes(ch.url)) favorites = favorites.filter(u => u !== ch.url);
+        else favorites.push(ch.url);
+        localStorage.setItem('zeno_favs', JSON.stringify(favorites));
+        renderGrid(allChannels);
+    }
+
+    // নেভিগেশন সিঙ্ক (ব্যাক আসলে চ্যানেলে ফোকাস রাখা)
+    player.on('fullscreenchange', () => {
+        if (!player.isFullscreen() && currentCh) {
+            setTimeout(() => {
+                const target = document.querySelector(`.card[data-url="${currentCh.url}"]`);
+                if (target) { target.focus(); target.scrollIntoView({ block: 'center' }); }
+            }, 200);
+        }
+    });
+
+    // রিমোট কী লজিক
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // ১. নম্বর কী প্যাড
+        // নম্বর কী প্যাড
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -137,58 +190,35 @@
             }, 1500);
         }
 
-        // ২. স্পেশাল নেভিগেশন (Up/Down/Left/Right)
         switch(e.key) {
             case 'ArrowUp':
-                if (active.classList.contains('card')) {
-                    // গ্রিড থেকে ক্যাটাগরিতে যাওয়া
-                    document.querySelector('.tab').focus();
-                } else if (active.classList.contains('nav-item')) {
-                    // ক্যাটাগরি থেকে প্লেয়ার কন্ট্রোলে যাওয়া
+                if (active.classList.contains('card')) document.querySelector('.tab').focus();
+                else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) {
                     player.controlBar.playToggle.focus();
                 }
                 break;
-            
             case 'ArrowDown':
-                if (active.closest('.vjs-control-bar')) {
-                    document.querySelector('.tab').focus();
-                } else if (active.classList.contains('nav-item') && !active.classList.contains('card')) {
+                if (active.closest('.vjs-control-bar')) document.querySelector('.tab').focus();
+                else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) {
                     document.querySelector('.card').focus();
                 }
                 break;
-
             case 'ArrowRight':
-                // প্লেয়ারের ভেতর ডানে মুভ করা (Play -> Volume -> Fullscreen)
-                if (active.classList.contains('vjs-play-control')) {
-                    player.controlBar.volumePanel.focus();
-                    e.preventDefault();
-                } else if (active.classList.contains('vjs-volume-panel')) {
-                    player.controlBar.fullscreenToggle.focus();
-                    e.preventDefault();
-                }
+                if (active.classList.contains('vjs-play-control')) player.controlBar.volumePanel.focus();
+                else if (active.classList.contains('vjs-volume-panel')) player.controlBar.fullscreenToggle.focus();
                 break;
-
             case 'ArrowLeft':
-                if (active.classList.contains('vjs-fullscreen-control')) {
-                    player.controlBar.volumePanel.focus();
-                    e.preventDefault();
-                } else if (active.classList.contains('vjs-volume-panel')) {
-                    player.controlBar.playToggle.focus();
-                    e.preventDefault();
-                }
+                if (active.classList.contains('vjs-fullscreen-control')) player.controlBar.volumePanel.focus();
+                else if (active.classList.contains('vjs-volume-panel')) player.controlBar.playToggle.focus();
                 break;
-
-            case 'Enter':
-                if (active.classList.contains('card')) {
-                    // চ্যানেল প্লে করার পর অটো ফুলস্ক্রিন হতে চাইলে নিচের লাইনটি আনকমেন্ট করুন
-                    // player.requestFullscreen();
-                }
+            case 'f': // 'F' কী দিয়ে ফেভারিট টগল (রিমোটের বিশেষ বাটন হিসেবে কাজ করবে)
+                if (active.classList.contains('card') && currentCh) toggleFavorite(currentCh);
                 break;
         }
     });
 
     function filterCategory(cat) {
-        let list = (cat === 'Sports') ? allChannels.filter(c => c.group.toLowerCase().includes('sport')) : allChannels;
+        let list = (cat === 'Favorite') ? allChannels.filter(c => favorites.includes(c.url)) : allChannels;
         renderGrid(list);
     }
 
