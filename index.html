@@ -10,26 +10,28 @@
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
-        #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
+        #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* রিমোট ফোকাস ইন্ডিকেটর */
         .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; transform: scale(1.1); }
 
         /* ইউআই লেআউট */
-        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); }
+        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; }
         
         /* সার্চ বার */
         #search-overlay { 
             display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
-            background: #050505; z-index: 200; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
+            background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
         }
         #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
 
+        /* ট্যাব কন্টেইনার ফিক্সড পজিশন */
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
-            padding: 10px 20px; background: rgba(5, 5, 5, 0.98); 
-            position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
+            padding: 12px 20px; background: #050505; 
+            position: sticky; top: 0; z-index: 150; 
+            border-bottom: 2px solid #222;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* শ্যাডো যোগ করা হয়েছে যাতে গ্রিড নিচে যাচ্ছে বোঝা যায় */
         }
         
         .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; }
@@ -42,44 +44,54 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
-        /* --- নতুন প্রিমিয়াম ফুলস্ক্রিন বাটন স্টাইল --- */
+        /* --- আল্ট্রা প্রিমিয়াম ফুলস্ক্রিন বাটন --- */
         .fullscreen-trigger {
-            margin-left: auto; /* এটি বাটনটিকে ডানে সরিয়ে দেবে */
+            margin-left: auto;
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #ff0000 0%, #990000 100%);
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             color: white;
-            padding: 8px 16px;
-            border-radius: 12px;
+            padding: 8px 18px;
+            border-radius: 50px; /* ক্যাপসুল ডিজাইন */
             cursor: pointer;
-            font-weight: 800;
-            font-size: 11px;
-            letter-spacing: 1px;
-            border: 2px solid rgba(255,255,255,0.1);
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
-            animation: pulse-glow 2s infinite;
+            font-weight: bold;
+            font-size: 12px;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .fullscreen-trigger svg { width: 16px; height: 16px; stroke: white; }
-
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.6); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        .fullscreen-trigger::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
         }
+
+        .fullscreen-trigger:hover::before, .fullscreen-trigger:focus::before {
+            left: 100%;
+        }
+
+        .fullscreen-trigger svg { width: 18px; height: 18px; fill: white; }
 
         /* ফোকাস স্টাইল */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-trigger:focus { 
-            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.08); outline: none;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
-        
-        .fullscreen-trigger:focus { background: white !important; color: red !important; }
-        .fullscreen-trigger:focus svg { stroke: red; }
 
-        #main-content { padding: 15px; } 
+        /* মেইন কন্টেন্ট অ্যাডজাস্টমেন্ট */
+        #main-content { 
+            padding: 20px 15px; 
+            background: var(--bg);
+            min-height: 100vh;
+        } 
+        
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         
         .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
@@ -117,8 +129,8 @@
         <div id="recent-box" style="display:flex; gap:8px;"></div>
         
         <div class="fullscreen-trigger" tabindex="0" onclick="player.requestFullscreen()">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-            <span>FULL</span>
+            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            <span>FULL SCREEN</span>
         </div>
     </div>
 
@@ -250,12 +262,10 @@
         }
     });
 
-    // --- চূড়ান্ত রিমোট নেভিগেশন ---
+    // --- রিমোট নেভিগেশন ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         const playBtn = document.querySelector('.vjs-play-control');
-        const volBtn = document.querySelector('.vjs-volume-panel');
-        const fullBtn = document.querySelector('.vjs-fullscreen-control');
 
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
@@ -279,7 +289,6 @@
                     playBtn.focus();
                 }
                 break;
-
             case 'ArrowDown':
                 if (active.closest('.vjs-control-bar')) {
                     e.preventDefault();
