@@ -6,13 +6,20 @@
     <title>Zeno TV Premium - Ultimate Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; --premium: linear-gradient(45deg, #FFD700, #FFA500); }
+        :root { 
+            --accent: #ff0000; 
+            --bg: #050505; 
+            --card: #1a1a1a; 
+            --gold: #ffd700; 
+            --premium: linear-gradient(45deg, #FFD700, #FFA500);
+            --blue-glow: #0088ff;
+        }
+        
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার ও ভলিউম হাইড */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
-        /* ভলিউম কন্ট্রোল হাইড করার সিএসএস */
         .vjs-volume-panel, .vjs-mute-control { display: none !important; }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
@@ -53,24 +60,46 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
+        /* কার্ড এবং বাটন ফোকাস ইফেক্ট */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.08); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            transform: scale(1.05); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
 
         #main-content { padding: 20px 15px; min-height: 100vh; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; outline: none; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
-        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: var(--gold); font-size: 12px; display: none; }
+        .card { 
+            background: var(--card); border-radius: 15px; cursor: pointer; 
+            border: 2px solid #333; position: relative; transition: 0.3s; outline: none; overflow: hidden;
+        }
+
+        /* --- নম্বর ডিজাইনে পরিবর্তন --- */
+        .ch-index { 
+            position: absolute; top: 0; left: 0; 
+            background: var(--blue-glow); color: white; 
+            font-size: 18px; font-weight: 900; 
+            padding: 5px 12px; 
+            border-bottom-right-radius: 12px; 
+            z-index: 10; 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px #000;
+        }
+        /* ফোকাস হলে নম্বরের রঙ বদলাবে */
+        .card:focus .ch-index {
+            background: #fff;
+            color: var(--accent);
+        }
+
+        .fav-star { position: absolute; top: 5px; right: 5px; color: var(--gold); font-size: 14px; display: none; z-index: 10; }
         .is-fav .fav-star { display: block; }
 
-        .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
+        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
+        
+        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #ccc; }
 
-        #osd-number { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 60px; padding: 15px 40px; border-radius: 20px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
+        #osd-number { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 70px; padding: 20px 50px; border-radius: 25px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 40px rgba(255,0,0,0.6); }
     </style>
 </head>
 <body>
@@ -110,7 +139,6 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    // ভলিউম ফুল করে দেওয়া
     player.volume(1);
 
     let allChannels = [], currentCh = null;
@@ -148,11 +176,11 @@
             card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
             const displayIdx = allChannels.findIndex(i => i.url === ch.url) + 1;
-            card.setAttribute('data-index', displayIdx); // নম্বর দিয়ে খোঁজার জন্য
+            card.setAttribute('data-index', displayIdx);
             card.innerHTML = `
                 <div class="ch-index">${displayIdx}</div>
                 <div class="fav-star">⭐</div>
-                <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
+                <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
 
@@ -215,7 +243,6 @@
         else player.exitFullscreen();
     }
 
-    // ফুলস্ক্রিন থেকে ফিরলে ফোকাস ঠিক রাখার ইভেন্ট
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen() && currentCh) {
             const idx = allChannels.findIndex(i => i.url === currentCh.url) + 1;
@@ -227,7 +254,6 @@
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর টাইপ ও ফোকাস লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -240,13 +266,14 @@
                 const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                 
                 if (targetCard) {
-                    targetCard.focus(); // লোগোতে ফোকাস নিয়ে যাবে
-                    targetCard.click(); // চ্যানেল প্লে করবে
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetCard.focus();
+                    targetCard.click();
                 }
                 
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1000);
+            }, 1200);
             return;
         }
 
@@ -263,7 +290,7 @@
 
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
-            const cols = Math.floor(grid.offsetWidth / 140) || 2;
+            const cols = Math.floor(grid.offsetWidth / 150) || 2;
             if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
             else if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
