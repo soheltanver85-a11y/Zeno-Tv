@@ -13,6 +13,7 @@
             --gold: #ffd700; 
             --premium: linear-gradient(45deg, #FFD700, #FFA500);
             --blue-glow: #0088ff;
+            --refresh-color: #00c853; /* রিফ্রেশ বাটনের জন্য সবুজ রঙ */
         }
         
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
@@ -52,18 +53,32 @@
         }
         .tabs-container::-webkit-scrollbar { display: none; }
 
-        .tab, .recent-pill, .apk-btn, .search-btn { 
+        /* বাটন স্টাইল */
+        .tab, .recent-pill, .apk-btn, .refresh-btn, .search-btn { 
             padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
             background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
             display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
         }
         .apk-btn { background: #007bff; }
+        
+        /* নতুন রিফ্রেশ বাটন ডিজাইন */
+        .refresh-btn { 
+            background: var(--refresh-color); 
+            box-shadow: 0 0 10px rgba(0, 200, 83, 0.3);
+        }
+
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
         /* কার্ড এবং বাটন ফোকাস ইফেক্ট */
-        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
+        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .refresh-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
             transform: scale(1.05); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+        }
+        
+        /* রিফ্রেশ বাটন আলাদাভাবে ফোকাস হলে সাদা/সবুজ গ্লো দিবে */
+        .refresh-btn:focus {
+            background: #fff !important; color: var(--refresh-color) !important;
+            box-shadow: 0 0 20px rgba(0, 200, 83, 0.8);
         }
 
         #main-content { padding: 20px 15px; min-height: 100vh; } 
@@ -121,6 +136,7 @@
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভারিট</div>
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
+        <div class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
     </div>
 
@@ -179,7 +195,6 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // মাউস/টাচ লং প্রেস লজিক (ফুলস্ক্রিন)
             card.onmousedown = card.ontouchstart = () => {
                 isLongPress = false;
                 longPressTimer = setTimeout(() => {
@@ -263,7 +278,6 @@
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর কী লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -285,7 +299,6 @@
             return;
         }
 
-        // F বাটন হোল্ড করে ফেভারিট করার লজিক
         if (e.key.toLowerCase() === 'f' && active.classList.contains('card')) {
             if (!isFKeyHeld) {
                 isFKeyHeld = true;
@@ -293,22 +306,20 @@
                     const idx = parseInt(active.getAttribute('data-index')) - 1;
                     const ch = allChannels[idx];
                     toggleFavorite(ch, active);
-                    // ছোট একটা ফিডব্যাক ইফেক্ট
                     active.style.boxShadow = "0 0 30px white";
                     setTimeout(() => active.style.boxShadow = "", 300);
                 }, 1000);
             }
         }
 
-        // এন্টার চেপে ফুলস্ক্রিন করার লজিক
         if (e.key === 'Enter' && active.classList.contains('card')) {
             longPressTimer = setTimeout(() => {
                 player.requestFullscreen();
             }, 1000);
         }
 
-        // নেভিগেশন (Arrow Keys)
-        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
+        // নেভিগেশন আইটেম আপডেট (রিফ্রেশ বাটন অন্তর্ভুক্ত করা হয়েছে)
+        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .refresh-btn, .recent-pill, .fullscreen-btn, .card'));
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
         const currentIndex = navItems.indexOf(active);
