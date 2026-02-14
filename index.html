@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Premium Compact UI</title>
+    <title>Zeno TV Premium - Ultimate Remote Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; }
@@ -13,66 +13,54 @@
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 100; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* রিমোট ফোকাস ইন্ডিকেটর */
-        .vjs-control:focus { background: var(--accent) !important; outline: none; }
+        /* রিমোট ফোকাস ইন্ডিকেটর (প্লেয়ার কন্ট্রোল) */
+        .vjs-control:focus { background: var(--accent) !important; outline: 3px solid white !important; transform: scale(1.1); }
 
-        /* নিচের অংশ */
+        /* ইউআই লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); }
         
-        /* ট্যাব ও ক্যাটাগরি বার */
+        /* সার্চ বার */
+        #search-overlay { 
+            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
+            background: #050505; z-index: 200; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
+        }
+        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
+
         .tabs-container { 
-            display: flex; align-items: center; gap: 8px; 
-            padding: 10px 15px; background: rgba(5, 5, 5, 0.98); 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 10px 20px; background: rgba(5, 5, 5, 0.98); 
             position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
         }
         
-        .zeno-logo { font-weight: 900; font-size: 20px; color: var(--accent); font-style: italic; margin-right: 5px; }
+        .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; }
 
         .tab, .recent-pill, .apk-btn, .search-btn { 
             padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 11px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+            background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
+        }
+        .apk-btn { background: #007bff; }
+        .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
+
+        /* ফোকাস স্টাইল */
+        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
+            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
 
-        /* ইউনিক ফুলস্ক্রিন বাটন */
-        .fs-unique-btn {
-            background: linear-gradient(45deg, #ff0000, #b30000);
-            border: 2px solid #fff;
-            padding: 8px 15px;
-            border-radius: 10px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            margin-left: auto;
-            display: flex;
-            align-items: center; gap: 6px;
-            transition: 0.3s;
-        }
-        .fs-unique-btn:focus { background: white; color: black; transform: scale(1.1); box-shadow: 0 0 15px white; }
-
-        /* গ্রিড সেটিংস: ছোট এবং সুন্দর শাড়ি */
-        #main-content { padding: 12px; } 
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-            gap: 10px; 
-        }
+        #main-content { padding: 15px; } 
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         
-        .card { background: var(--card); border-radius: 10px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 9px; padding: 1px 4px; border-bottom-right-radius: 6px; z-index: 5; }
-        .fav-star { position: absolute; top: 2px; right: 5px; color: #ffd700; font-size: 13px; display: none; }
+        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
+        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: #ffd700; font-size: 12px; display: none; }
         .is-fav .fav-star { display: block; }
 
         .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 75%; height: 75%; object-fit: contain; }
-        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
+        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        /* ফোকাস হলে লাল বর্ডার ও বড় হবে */
-        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
-            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.08); outline: none;
-        }
-
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 25px; border-radius: 12px; display: none; z-index: 1000; font-weight: bold; }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 25px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -84,14 +72,18 @@
 </div>
 
 <div id="ui-overlay">
+    <div id="search-overlay">
+        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
+        <button class="tab" onclick="toggleSearch(false)" style="margin-left:10px;">বন্ধ</button>
+    </div>
+
     <div class="tabs-container">
         <div class="zeno-logo">ZENO</div>
-        <div class="search-btn" tabindex="0">🔍</div>
+        <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ প্রিয়</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
+        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
-        <div class="apk-btn" tabindex="0">📥 APK</div>
-        <div class="fs-unique-btn" tabindex="0" onclick="goFull()">⛶ FULLSCREEN</div>
     </div>
 
     <div id="main-content">
@@ -114,13 +106,14 @@
             const res = await fetch(m3uUrl);
             const data = await res.text();
             const lines = data.split('\n');
-            let name = "", logo = "";
+            let name = "", logo = "", group = "";
             lines.forEach(line => {
                 if (line.includes('#EXTINF:')) {
                     name = line.split(',').pop().trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                    group = (line.match(/group-title="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
-                    allChannels.push({ name, url: line.trim(), logo });
+                    allChannels.push({ name, url: line.trim(), logo, group });
                 }
             });
             renderGrid(allChannels);
@@ -146,20 +139,21 @@
 
             card.onclick = () => playChannel(ch);
 
-            // লং প্রেস ফুলস্ক্রিন লজিক
+            // লং প্রেস (Long Press) -> ফুলস্ক্রিন
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
-                    goFull();
+                    player.requestFullscreen();
                 }, 1000);
             };
             const endPress = () => clearTimeout(longPressTimer);
 
             card.onmousedown = card.ontouchstart = startPress;
             card.onmouseup = card.onmouseleave = card.ontouchend = endPress;
-            card.onkeydown = (e) => { 
+
+            card.onkeydown = (e) => {
                 if (e.key === 'Enter') startPress();
-                if (e.key.toLowerCase() === 'f') toggleFavorite(ch);
+                if (e.key === 'f' || e.key === 'F') toggleFavorite(ch); // 'f' দিয়ে ফেভারিট
             };
             card.onkeyup = (e) => { if (e.key === 'Enter') endPress(); };
 
@@ -176,10 +170,6 @@
         renderRecentPills();
     }
 
-    function goFull() {
-        if (player.ready()) player.requestFullscreen();
-    }
-
     function renderRecentPills() {
         const box = document.getElementById('recent-box');
         box.innerHTML = '';
@@ -187,10 +177,21 @@
             const pill = document.createElement('div');
             pill.className = 'recent-pill';
             pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,4)}</span>`;
+            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
             pill.onclick = () => playChannel(ch);
             box.appendChild(pill);
         });
+    }
+
+    function toggleSearch(show) {
+        const overlay = document.getElementById('search-overlay');
+        overlay.style.display = show ? 'flex' : 'none';
+        if(show) document.getElementById('search-input').focus();
+    }
+
+    function searchChannels(q) {
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+        renderGrid(filtered);
     }
 
     function toggleFavorite(ch) {
@@ -205,13 +206,24 @@
         renderGrid(list);
     }
 
-    // রিমোট কন্ট্রোল এবং নম্বর কী
+    // ব্যাক আসলে ওই চ্যানেলে ফোকাস
+    player.on('fullscreenchange', () => {
+        if (!player.isFullscreen() && currentCh) {
+            setTimeout(() => {
+                const target = document.querySelector(`.card[data-url="${currentCh.url}"]`);
+                if (target) { target.focus(); target.scrollIntoView({ block: 'center' }); }
+            }, 300);
+        }
+    });
+
+    // --- চূড়ান্ত রিমোট নেভিগেশন ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         const playBtn = document.querySelector('.vjs-play-control');
         const volBtn = document.querySelector('.vjs-volume-panel');
         const fullBtn = document.querySelector('.vjs-fullscreen-control');
 
+        // নম্বর কি প্যাড
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -226,23 +238,35 @@
 
         switch(e.key) {
             case 'ArrowUp':
-                if (active.classList.contains('card')) document.querySelector('.tab').focus();
-                else if (active.classList.contains('tab') || active.classList.contains('fs-unique-btn')) {
+                if (active.classList.contains('card')) {
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill') || active.classList.contains('search-btn')) {
+                    e.preventDefault();
                     player.userActive(true);
                     playBtn.focus();
                 }
                 break;
+
             case 'ArrowDown':
-                if (active.closest('.vjs-control-bar')) document.querySelector('.tab').focus();
-                else if (active.classList.contains('tab') || active.classList.contains('fs-unique-btn')) document.querySelector('.card').focus();
+                if (active.closest('.vjs-control-bar')) {
+                    e.preventDefault();
+                    player.userActive(false);
+                    document.querySelector('.tab').focus();
+                } else if (active.classList.contains('tab') || active.classList.contains('recent-pill')) {
+                    document.querySelector('.card').focus();
+                }
                 break;
+
             case 'ArrowRight':
                 if (active === playBtn) { e.preventDefault(); volBtn.focus(); }
                 else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); fullBtn.focus(); }
+                else if (active === fullBtn) { e.preventDefault(); playBtn.focus(); }
                 break;
+
             case 'ArrowLeft':
                 if (active === fullBtn) { e.preventDefault(); volBtn.focus(); }
                 else if (active === volBtn || active.closest('.vjs-volume-panel')) { e.preventDefault(); playBtn.focus(); }
+                else if (active === playBtn) { e.preventDefault(); fullBtn.focus(); }
                 break;
         }
     });
