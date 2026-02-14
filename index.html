@@ -138,20 +138,30 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // মাউস/টাচ লং প্রেস
             card.onmousedown = card.ontouchstart = (e) => {
                 isLongPressActive = false;
                 longPressTimer = setTimeout(() => {
                     isLongPressActive = true;
-                    playChannel(displayIdx - 1);
-                    toggleMainFullscreen();
-                }, 1000);
+                    toggleFavorite(ch.url, card);
+                }, 1000); // ১ সেকেন্ড ধরে রাখলে ফেভারিট হবে
             };
             card.onmouseup = card.ontouchend = () => clearTimeout(longPressTimer);
             card.onclick = () => { if(!isLongPressActive) playChannel(displayIdx - 1); };
 
             grid.appendChild(card);
         });
+    }
+
+    function toggleFavorite(url, cardElement) {
+        const index = favorites.indexOf(url);
+        if (index === -1) {
+            favorites.push(url);
+            cardElement.classList.add('is-fav');
+        } else {
+            favorites.splice(index, 1);
+            cardElement.classList.remove('is-fav');
+        }
+        localStorage.setItem('zeno_favs', JSON.stringify(favorites));
     }
 
     function playChannel(index) {
@@ -170,7 +180,6 @@
         }
     }
 
-    // ফুলস্ক্রিন থেকে বের হলে ফোকাস ঠিক রাখা
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen()) {
             setTimeout(() => {
@@ -188,22 +197,33 @@
         renderGrid(list);
     }
 
-    // ইউনিভার্সাল কী ইভেন্ট লিসেনার (ফুলস্ক্রিন মোডেও কাজ করবে)
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         const isFS = player.isFullscreen();
 
-        // ১. নম্বর ইনপুট (২ সেকেন্ড সময়)
+        // ১. নম্বর ইনপুট হ্যান্ডলিং
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
             osd.innerText = numBuffer; 
             osd.style.display = 'block';
+            
+            // ফুলস্ক্রিনে নম্বর দেখানোর জন্য
+            if(isFS) osd.style.zIndex = "2147483647";
+
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer) - 1;
                 if (targetIdx >= 0 && targetIdx < allChannels.length) {
                     playChannel(targetIdx);
+                    // সরাসরি সেই চ্যানেলের লোগোতে ফোকাস নিয়ে যাওয়া
+                    setTimeout(() => {
+                        const targetCard = document.querySelector(`.card[data-index="${targetIdx + 1}"]`);
+                        if (targetCard) {
+                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetCard.focus();
+                        }
+                    }, 100);
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
@@ -211,29 +231,19 @@
             return;
         }
 
-        // ২. ফুলস্ক্রিন অবস্থায় Left/Right চ্যানেল চেঞ্জ
+        // ২. ফুলস্ক্রিন অবস্থায় চ্যানেল পরিবর্তন
         if (isFS) {
-            if (e.key === 'ArrowRight') {
+            if (e.key === 'ArrowRight' || e.key === 'ChannelUp') {
                 let next = currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1;
                 playChannel(next);
-            } else if (e.key === 'ArrowLeft') {
+            } else if (e.key === 'ArrowLeft' || e.key === 'ChannelDown') {
                 let prev = currentChIndex - 1 < 0 ? allChannels.length - 1 : currentChIndex - 1;
                 playChannel(prev);
             }
             return;
         }
 
-        // ৩. রিমোট এন্টার লং প্রেস (ফুলস্ক্রিন করার জন্য)
-        if (e.key === 'Enter' && active.classList.contains('card')) {
-            isLongPressActive = false;
-            longPressTimer = setTimeout(() => {
-                isLongPressActive = true;
-                playChannel(parseInt(active.getAttribute('data-index')) - 1);
-                toggleMainFullscreen();
-            }, 1000);
-        }
-
-        // ৪. সাধারণ নেভিগেশন
+        // ৩. সাধারণ নেভিগেশন
         const navItems = Array.from(document.querySelectorAll('.tab, .apk-btn, .refresh-btn, .card'));
         const cards = Array.from(document.querySelectorAll('.card'));
         const grid = document.querySelector('.grid');
@@ -257,14 +267,6 @@
             if (e.key === 'ArrowRight' && curIdx < navItems.length - 1) navItems[curIdx + 1].focus();
             else if (e.key === 'ArrowLeft' && curIdx > 0) navItems[curIdx - 1].focus();
             else if (e.key === 'ArrowDown') cards[0].focus();
-        }
-    });
-
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') {
-            clearTimeout(longPressTimer);
-            // সামান্য ডিলে দিয়ে ক্লিক ইভেন্ট হ্যান্ডল করা
-            setTimeout(() => { isLongPressActive = false; }, 200);
         }
     });
 
