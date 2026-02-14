@@ -17,93 +17,52 @@
         
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার ও ভলিউম হাইড */
         #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         .vjs-volume-panel, .vjs-mute-control { display: none !important; }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
-        .zeno-logo { 
-            font-weight: 900; font-size: 24px; color: #fff; 
-            font-style: italic; margin-right: 15px; flex-shrink: 0;
-            text-shadow: 2px 2px #ff0000; letter-spacing: 1px;
-        }
+        .zeno-logo { font-weight: 900; font-size: 24px; color: #fff; font-style: italic; margin-right: 15px; flex-shrink: 0; text-shadow: 2px 2px #ff0000; }
         .zeno-logo span { color: var(--accent); }
 
-        .fullscreen-btn {
-            position: fixed; top: 10px; right: 10px; z-index: 1000;
-            background: var(--premium); color: #000; border: none; padding: 10px 15px;
-            border-radius: 8px; cursor: pointer; font-weight: 900; 
-            font-size: 12px; transition: 0.3s; box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
-        }
+        .fullscreen-btn { position: fixed; top: 10px; right: 10px; z-index: 1000; background: var(--premium); color: #000; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 900; font-size: 12px; }
 
-        #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
-            background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
-        }
+        #search-overlay { display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent); }
         #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
 
-        .tabs-container { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 12px 20px; background: #050505; 
-            position: sticky; top: 0; z-index: 150; 
-            border-bottom: 2px solid #222; overflow-x: auto; scrollbar-width: none;
-        }
-        .tabs-container::-webkit-scrollbar { display: none; }
+        .tabs-container { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #050505; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222; overflow-x: auto; }
 
-        .tab, .recent-pill, .apk-btn, .search-btn { 
-            padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
-        }
+        .tab, .recent-pill, .apk-btn, .search-btn { padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none; transition: 0.2s; }
         .apk-btn { background: #007bff; }
-        .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
-        /* কার্ড এবং বাটন ফোকাস ইফেক্ট */
-        .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
-            background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.05); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+        .tab:focus, .card:focus, .apk-btn:focus, .search-btn:focus { 
+            background: var(--accent) !important; color: #fff !important; border-color: #fff !important; transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
 
         #main-content { padding: 20px 15px; min-height: 100vh; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         
-        .card { 
-            background: var(--card); border-radius: 15px; cursor: pointer; 
-            border: 2px solid #333; position: relative; transition: 0.3s; outline: none; overflow: hidden;
-        }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; transition: 0.3s; outline: none; overflow: hidden; }
 
-        .ch-index { 
-            position: absolute; top: 0; left: 0; 
-            background: var(--blue-glow); color: white; 
-            font-size: 18px; font-weight: 900; 
-            padding: 5px 12px; 
-            border-bottom-right-radius: 12px; 
-            z-index: 10; 
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            text-shadow: 1px 1px 2px #000;
-        }
-        .card:focus .ch-index { background: #fff; color: var(--accent); }
-
-        .fav-star { position: absolute; top: 5px; right: 5px; color: var(--gold); font-size: 18px; display: none; z-index: 10; text-shadow: 0 0 5px black; }
+        .ch-index { position: absolute; top: 0; left: 0; background: var(--blue-glow); color: white; font-size: 18px; font-weight: 900; padding: 5px 12px; border-bottom-right-radius: 12px; z-index: 10; }
+        
+        /* ফেভারিট স্টার ডিজাইন */
+        .fav-star { position: absolute; top: 5px; right: 5px; color: var(--gold); font-size: 20px; display: none; z-index: 15; text-shadow: 1px 1px 3px #000; }
         .is-fav .fav-star { display: block; }
 
         .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
         .logo-box img { width: 75%; height: 75%; object-fit: contain; }
-        
-        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #ccc; }
+        .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        #osd-number { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 70px; padding: 20px 50px; border-radius: 25px; display: none; z-index: 1000; font-weight: bold; box-shadow: 0 0 40px rgba(255,0,0,0.6); }
+        #osd-number { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; font-size: 70px; padding: 20px 50px; border-radius: 25px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="osd-number"></div>
 
-<button class="fullscreen-btn" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()">
-    <span>FULLSCREEN</span>
-</button>
+<button class="fullscreen-btn" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()"><span>FULLSCREEN</span></button>
 
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
@@ -119,7 +78,7 @@
         <div class="zeno-logo">ZENO<span> TV</span></div>
         <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
-        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভারিট</div>
+        <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
     </div>
@@ -139,8 +98,8 @@
     let allChannels = [], currentCh = null;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('zeno_recents')) || [];
-    let numBuffer = "", numTimeout = null, longPressTimer = null, fPressTimer = null;
-    let isLongPress = false, isFKeyHeld = false;
+    let numBuffer = "", numTimeout = null, longPressTimer = null, fKeyTimer = null;
+    let isLongPress = false, isFDown = false;
 
     async function init() {
         try {
@@ -152,9 +111,8 @@
                 if (line.includes('#EXTINF:')) {
                     name = line.split(',').pop().trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
-                    group = (line.match(/group-title="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
-                    allChannels.push({ name, url: line.trim(), logo, group });
+                    allChannels.push({ name, url: line.trim(), logo });
                 }
             });
             renderGrid(allChannels);
@@ -165,13 +123,15 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, index) => {
+        list.forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
             card.className = `card ${isFav ? 'is-fav' : ''}`;
             card.tabIndex = 0;
             const displayIdx = allChannels.findIndex(i => i.url === ch.url) + 1;
             card.setAttribute('data-index', displayIdx);
+            card.setAttribute('data-url', ch.url); // সহজে খুঁজার জন্য URL সেভ রাখা
+            
             card.innerHTML = `
                 <div class="ch-index">${displayIdx}</div>
                 <div class="fav-star">⭐</div>
@@ -179,7 +139,7 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // মাউস/টাচ লং প্রেস লজিক (ফুলস্ক্রিন)
+            // টাচ/মাউস লং প্রেস (ফুলস্ক্রিন)
             card.onmousedown = card.ontouchstart = () => {
                 isLongPress = false;
                 longPressTimer = setTimeout(() => {
@@ -195,15 +155,18 @@
         });
     }
 
-    function toggleFavorite(ch, cardElement) {
-        if(!ch) return;
-        const index = favorites.indexOf(ch.url);
+    // ফেভারিট টগল ফাংশন
+    function toggleFavorite(card) {
+        if (!card) return;
+        const url = card.getAttribute('data-url');
+        const index = favorites.indexOf(url);
+        
         if (index === -1) {
-            favorites.push(ch.url);
-            cardElement.classList.add('is-fav');
+            favorites.push(url);
+            card.classList.add('is-fav');
         } else {
             favorites.splice(index, 1);
-            cardElement.classList.remove('is-fav');
+            card.classList.remove('is-fav');
         }
         localStorage.setItem('zeno_favs', JSON.stringify(favorites));
     }
@@ -252,24 +215,28 @@
         else player.exitFullscreen();
     }
 
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen() && currentCh) {
-            const idx = allChannels.findIndex(i => i.url === currentCh.url) + 1;
-            const targetCard = document.querySelector(`.card[data-index="${idx}"]`);
-            if (targetCard) targetCard.focus();
-        }
-    });
-
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর কী লজিক
+        // ১. F বাটন চেপে ধরা (ফেভারিট)
+        if (e.key.toLowerCase() === 'f' && active.classList.contains('card')) {
+            if (!isFDown) {
+                isFDown = true;
+                fKeyTimer = setTimeout(() => {
+                    toggleFavorite(active);
+                    // একটি ছোট ভিজ্যুয়াল ইফেক্ট
+                    active.style.border = "2px solid gold";
+                    setTimeout(() => active.style.border = "", 300);
+                }, 1000); // ১ সেকেন্ড চেপে ধরলে
+            }
+        }
+
+        // ২. নম্বর দিয়ে চ্যানেল চেঞ্জ
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
             osd.innerText = numBuffer; 
             osd.style.display = 'block';
-            
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
@@ -279,38 +246,15 @@
                     targetCard.focus();
                     targetCard.click();
                 }
-                numBuffer = ""; 
-                osd.style.display = 'none';
+                numBuffer = ""; osd.style.display = 'none';
             }, 1200);
             return;
         }
 
-        // F বাটন হোল্ড করে ফেভারিট করার লজিক
-        if (e.key.toLowerCase() === 'f' && active.classList.contains('card')) {
-            if (!isFKeyHeld) {
-                isFKeyHeld = true;
-                fPressTimer = setTimeout(() => {
-                    const idx = parseInt(active.getAttribute('data-index')) - 1;
-                    const ch = allChannels[idx];
-                    toggleFavorite(ch, active);
-                    // ছোট একটা ফিডব্যাক ইফেক্ট
-                    active.style.boxShadow = "0 0 30px white";
-                    setTimeout(() => active.style.boxShadow = "", 300);
-                }, 1000);
-            }
-        }
-
-        // এন্টার চেপে ফুলস্ক্রিন করার লজিক
-        if (e.key === 'Enter' && active.classList.contains('card')) {
-            longPressTimer = setTimeout(() => {
-                player.requestFullscreen();
-            }, 1000);
-        }
-
-        // নেভিগেশন (Arrow Keys)
-        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
+        // ৩. নেভিগেশন (Arrows)
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
+        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
         const currentIndex = navItems.indexOf(active);
 
         if (active.classList.contains('card')) {
@@ -331,12 +275,11 @@
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') clearTimeout(longPressTimer);
-        
         if (e.key.toLowerCase() === 'f') {
-            clearTimeout(fPressTimer);
-            isFKeyHeld = false;
+            clearTimeout(fKeyTimer);
+            isFDown = false;
         }
+        if (e.key === 'Enter') clearTimeout(longPressTimer);
     });
 
     init();
