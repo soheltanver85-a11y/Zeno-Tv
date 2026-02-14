@@ -33,12 +33,6 @@
             border-radius: 8px; cursor: pointer; font-weight: 900; font-size: 12px;
         }
 
-        #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
-            background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
-        }
-        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
-
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; padding: 12px 20px; 
             background: #050505; position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
@@ -58,23 +52,20 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
-
         .ch-index { position: absolute; top: 0; left: 0; background: var(--blue-glow); color: white; font-size: 16px; font-weight: 900; padding: 4px 10px; border-bottom-right-radius: 12px; z-index: 10; }
-
         .fav-star { position: absolute; top: 5px; right: 5px; color: var(--gold); font-size: 18px; display: none; z-index: 10; }
         .is-fav .fav-star { display: block; }
 
         .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; margin: 5px; border-radius: 10px; }
         .logo-box img { width: 75%; height: 75%; object-fit: contain; }
-        
         .name { padding: 10px; font-size: 12px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #ccc; }
 
         #osd-number { 
             position: fixed; top: 10%; right: 5%; 
-            background: rgba(255, 0, 0, 0.8); color: white; 
+            background: rgba(255, 0, 0, 0.9); color: white; 
             font-size: 60px; padding: 15px 40px; border-radius: 15px; 
-            display: none; z-index: 2000; font-weight: bold; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: none; z-index: 9999; font-weight: bold; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); pointer-events: none;
         }
     </style>
 </head>
@@ -89,14 +80,8 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="search-overlay">
-        <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
-        <button class="tab" onclick="toggleSearch(false)">বন্ধ</button>
-    </div>
-
     <div class="tabs-container">
         <div class="zeno-logo">ZENO<span> TV</span></div>
-        <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐ ফেভারিট</div>
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
@@ -116,7 +101,7 @@
     let allChannels = [], currentChIndex = -1;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
     let numBuffer = "", numTimeout = null, longPressTimer = null;
-    let isLongPress = false;
+    let isLongPressActive = false;
 
     async function init() {
         try {
@@ -153,20 +138,17 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // লং প্রেস ফুলস্ক্রিন ও ক্লিক প্লে
-            card.onmousedown = card.ontouchstart = () => {
-                isLongPress = false;
+            // মাউস/টাচ লং প্রেস
+            card.onmousedown = card.ontouchstart = (e) => {
+                isLongPressActive = false;
                 longPressTimer = setTimeout(() => {
-                    isLongPress = true;
+                    isLongPressActive = true;
                     playChannel(displayIdx - 1);
-                    player.requestFullscreen();
+                    toggleMainFullscreen();
                 }, 1000);
             };
             card.onmouseup = card.ontouchend = () => clearTimeout(longPressTimer);
-            
-            card.onclick = () => {
-                if(!isLongPress) playChannel(displayIdx - 1);
-            };
+            card.onclick = () => { if(!isLongPressActive) playChannel(displayIdx - 1); };
 
             grid.appendChild(card);
         });
@@ -177,9 +159,18 @@
         currentChIndex = index;
         const ch = allChannels[index];
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play();
+        player.play().catch(e => console.log("Playback failed"));
     }
 
+    function toggleMainFullscreen() {
+        if (!player.isFullscreen()) {
+            player.requestFullscreen();
+        } else {
+            player.exitFullscreen();
+        }
+    }
+
+    // ফুলস্ক্রিন থেকে বের হলে ফোকাস ঠিক রাখা
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen()) {
             setTimeout(() => {
@@ -188,30 +179,21 @@
                     targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetCard.focus();
                 }
-            }, 100);
+            }, 200);
         }
     });
-
-    function toggleMainFullscreen() {
-        if (!player.isFullscreen()) player.requestFullscreen();
-        else player.exitFullscreen();
-    }
-
-    function toggleSearch(show) {
-        const overlay = document.getElementById('search-overlay');
-        overlay.style.display = show ? 'flex' : 'none';
-        if(show) document.getElementById('search-input').focus();
-    }
 
     function filterCategory(cat) {
         let list = (cat === 'Favorite') ? allChannels.filter(c => favorites.includes(c.url)) : allChannels;
         renderGrid(list);
     }
 
+    // ইউনিভার্সাল কী ইভেন্ট লিসেনার (ফুলস্ক্রিন মোডেও কাজ করবে)
     window.addEventListener('keydown', (e) => {
-        const isFS = player.isFullscreen();
         const active = document.activeElement;
+        const isFS = player.isFullscreen();
 
+        // ১. নম্বর ইনপুট (২ সেকেন্ড সময়)
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -222,39 +204,37 @@
                 const targetIdx = parseInt(numBuffer) - 1;
                 if (targetIdx >= 0 && targetIdx < allChannels.length) {
                     playChannel(targetIdx);
-                    if (!isFS) {
-                        const targetCard = document.querySelector(`.card[data-index="${targetIdx + 1}"]`);
-                        if (targetCard) {
-                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            targetCard.focus();
-                        }
-                    }
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 2000); 
+            }, 2000);
             return;
         }
 
-        // ফুলস্ক্রিন এন্টার ও লং প্রেস এন্টার
-        if (e.key === 'Enter' && active.classList.contains('card')) {
-            longPressTimer = setTimeout(() => {
-                isLongPress = true;
-                playChannel(parseInt(active.getAttribute('data-index')) - 1);
-                player.requestFullscreen();
-            }, 1000);
-        }
-
+        // ২. ফুলস্ক্রিন অবস্থায় Left/Right চ্যানেল চেঞ্জ
         if (isFS) {
             if (e.key === 'ArrowRight') {
-                playChannel(currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1);
+                let next = currentChIndex + 1 >= allChannels.length ? 0 : currentChIndex + 1;
+                playChannel(next);
             } else if (e.key === 'ArrowLeft') {
-                playChannel(currentChIndex - 1 < 0 ? allChannels.length - 1 : currentChIndex - 1);
+                let prev = currentChIndex - 1 < 0 ? allChannels.length - 1 : currentChIndex - 1;
+                playChannel(prev);
             }
             return;
         }
 
-        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .refresh-btn, .card'));
+        // ৩. রিমোট এন্টার লং প্রেস (ফুলস্ক্রিন করার জন্য)
+        if (e.key === 'Enter' && active.classList.contains('card')) {
+            isLongPressActive = false;
+            longPressTimer = setTimeout(() => {
+                isLongPressActive = true;
+                playChannel(parseInt(active.getAttribute('data-index')) - 1);
+                toggleMainFullscreen();
+            }, 1000);
+        }
+
+        // ৪. সাধারণ নেভিগেশন
+        const navItems = Array.from(document.querySelectorAll('.tab, .apk-btn, .refresh-btn, .card'));
         const cards = Array.from(document.querySelectorAll('.card'));
         const grid = document.querySelector('.grid');
 
@@ -283,7 +263,8 @@
     window.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') {
             clearTimeout(longPressTimer);
-            setTimeout(() => { isLongPress = false; }, 100);
+            // সামান্য ডিলে দিয়ে ক্লিক ইভেন্ট হ্যান্ডল করা
+            setTimeout(() => { isLongPressActive = false; }, 200);
         }
     });
 
