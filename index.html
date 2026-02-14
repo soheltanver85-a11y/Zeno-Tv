@@ -74,7 +74,7 @@
             border: 2px solid #333; position: relative; transition: 0.3s; outline: none; overflow: hidden;
         }
 
-        /* --- বড় ও স্পষ্ট নম্বর ডিজাইন --- */
+        /* --- নম্বর ডিজাইনে পরিবর্তন --- */
         .ch-index { 
             position: absolute; top: 0; left: 0; 
             background: var(--blue-glow); color: white; 
@@ -85,7 +85,7 @@
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
             text-shadow: 1px 1px 2px #000;
         }
-        /* ফোকাস হলে নম্বরের রঙ পরিবর্তন */
+        /* ফোকাস হলে নম্বরের রঙ বদলাবে */
         .card:focus .ch-index {
             background: #fff;
             color: var(--accent);
@@ -251,11 +251,9 @@
         }
     });
 
-    // --- উন্নত রিমোট নেভিগেশন লজিক ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর টাইপিং লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -266,60 +264,44 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
+                
                 if (targetCard) {
                     targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetCard.focus();
                     targetCard.click();
                 }
+                
                 numBuffer = ""; 
                 osd.style.display = 'none';
             }, 1200);
             return;
         }
 
+        if (e.key === 'Enter' && active.classList.contains('card')) {
+            longPressTimer = setTimeout(() => {
+                player.requestFullscreen();
+            }, 1000);
+        }
+
+        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn, .card'));
+        const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
-        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn'));
-        
+        const currentIndex = navItems.indexOf(active);
+
         if (active.classList.contains('card')) {
             const cardIdx = cards.indexOf(active);
-            const grid = document.querySelector('.grid');
-            // বর্তমান স্ক্রিন সাইজ অনুযায়ী কয়টি কলাম আছে তা বের করা
-            const cols = Math.floor(grid.getBoundingClientRect().width / 150) || 2;
-
-            if (e.key === 'ArrowRight') {
-                if (cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
-            } 
-            else if (e.key === 'ArrowLeft') {
-                if (cardIdx > 0) cards[cardIdx - 1].focus();
-            } 
-            else if (e.key === 'ArrowDown') {
-                // নিচে যাওয়ার জন্য নিখুঁত হিসাব
-                if (cardIdx + cols < cards.length) {
-                    cards[cardIdx + cols].focus();
-                } else if (cardIdx < cards.length - 1) {
-                    // যদি একদম শেষ লাইনে থাকে কিন্তু নিচে সরাসরি কোনো কার্ড না থাকে
-                    cards[cards.length - 1].focus();
-                }
-            } 
+            const cols = Math.floor(grid.offsetWidth / 150) || 2;
+            if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
+            else if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
+            else if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
             else if (e.key === 'ArrowUp') {
-                // উপরে যাওয়ার জন্য নিখুঁত হিসাব
-                if (cardIdx - cols >= 0) {
-                    cards[cardIdx - cols].focus();
-                } else {
-                    // একদম উপরের লাইনে থাকলে ট্যাবে ফোকাস যাবে
-                    navItems[0].focus();
-                }
+                if (cardIdx < cols) document.querySelector('.tab').focus();
+                else cards[cardIdx - cols].focus();
             }
         } else {
-            // মেনু বাটন নেভিগেশন
-            const currentIndex = navItems.indexOf(active);
-            if (e.key === 'ArrowRight' && currentIndex < navItems.length - 1) {
-                navItems[currentIndex + 1].focus();
-            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-                navItems[currentIndex - 1].focus();
-            } else if (e.key === 'ArrowDown') {
-                if (cards.length > 0) cards[0].focus();
-            }
+            if (e.key === 'ArrowRight' && currentIndex < navItems.length - 1) navItems[currentIndex + 1].focus();
+            else if (e.key === 'ArrowLeft' && currentIndex > 0) navItems[currentIndex - 1].focus();
+            else if (e.key === 'ArrowDown') cards[0].focus();
         }
     });
 
