@@ -6,7 +6,7 @@
     <title>Zeno TV Premium - Ultimate Remote Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; }
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; --premium: linear-gradient(45deg, #FFD700, #FFA500); }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
@@ -29,39 +29,56 @@
             padding: 12px 20px; background: #050505; 
             position: sticky; top: 0; z-index: 150; 
             border-bottom: 2px solid #222;
-            flex-wrap: nowrap;
             overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
         }
+        .tabs-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
         
         .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; flex-shrink: 0; }
 
-        .tab, .recent-pill, .apk-btn, .search-btn, .fullscreen-btn { 
+        .tab, .recent-pill, .apk-btn, .search-btn { 
             padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
             background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
             display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
         }
         .apk-btn { background: #007bff; }
-        
-        /* প্রিমিয়াম ফুল স্ক্রিন বাটন */
+        .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
+
+        /* প্রিমিয়াম ফিক্সড ফুলস্ক্রিন বাটন */
         .fullscreen-btn {
-            background: linear-gradient(45deg, #ff0000, #b30000);
-            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+            position: absolute;
+            right: 15px;
+            background: var(--premium);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 160;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 11px;
+            transition: 0.3s;
         }
 
-        .fullscreen-btn svg { width: 16px; height: 16px; fill: currentColor; }
-
-        .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
+        .fullscreen-btn svg { width: 16px; height: 16px; fill: #000; }
 
         /* ফোকাস স্টাইল */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
-            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.08); outline: none;
+            background: var(--accent) !important; color: #fff !important; border-color: #fff !important; transform: scale(1.08); outline: none;
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
         }
         
         /* ফুলস্ক্রিন বাটনের বিশেষ ফোকাস */
-        .fullscreen-btn:focus { background: #fff !important; color: #ff0000 !important; }
+        .fullscreen-btn:focus { 
+            background: #fff !important; 
+            color: #000 !important;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+        }
 
         #main-content { padding: 20px 15px; background: var(--bg); min-height: 100vh; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
@@ -100,9 +117,9 @@
         <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
         
-        <button class="fullscreen-btn" tabindex="0" onclick="toggleMainFullscreen()">
+        <button class="fullscreen-btn" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()">
             <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-            <span>Full Screen</span>
+            <span>FULL</span>
         </button>
     </div>
 
@@ -155,13 +172,11 @@
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-
             card.onclick = () => playChannel(ch);
             card.onmousedown = () => startLongPress(ch);
             card.onmouseup = () => clearLongPress();
             card.ontouchstart = () => startLongPress(ch);
             card.ontouchend = () => clearLongPress();
-
             grid.appendChild(card);
         });
     }
@@ -225,6 +240,7 @@
         renderGrid(list);
     }
 
+    // স্মার্ট রিমোট নেভিগেশন
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
