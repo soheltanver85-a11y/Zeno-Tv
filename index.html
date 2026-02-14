@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zeno TV Premium</title>
+<title>Zeno TV Premium Ultra</title>
 <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet"/>
+
 <style>
 :root{
 --accent:#ff0000;
@@ -22,8 +23,8 @@ width:100%;
 position:fixed;
 top:0;
 left:0;
-z-index:200;
 background:#000;
+z-index:200;
 }
 .video-js{width:100%!important;height:100%!important}
 
@@ -38,7 +39,7 @@ scroll-behavior:smooth;
 .tabs-container{
 display:flex;
 gap:10px;
-padding:12px 20px;
+padding:12px 15px;
 background:#050505;
 position:sticky;
 top:0;
@@ -46,31 +47,54 @@ z-index:150;
 overflow-x:auto;
 }
 
-.tab,.apk-btn,.search-btn,.recent-pill,.serial-fullscreen-btn{
+.tab,.apk-btn,.search-btn,.recent-pill,.fs-btn{
 padding:8px 14px;
 border-radius:8px;
 cursor:pointer;
 border:2px solid transparent;
 background:#222;
 color:#eee;
-font-weight:bold;
 font-size:12px;
+font-weight:bold;
 outline:none;
 white-space:nowrap;
 transition:.2s;
 }
 
-.serial-fullscreen-btn{
+.fs-btn{
 background:linear-gradient(135deg,#00f2ff,#007bff);
 box-shadow:0 0 20px rgba(0,123,255,.6);
 }
 
 .tab:focus,.apk-btn:focus,.search-btn:focus,
-.recent-pill:focus,.serial-fullscreen-btn:focus,.card:focus{
+.recent-pill:focus,.fs-btn:focus,.card:focus{
 background:var(--accent)!important;
 border-color:#fff!important;
 transform:scale(1.08);
 outline:none;
+}
+
+/* SEARCH */
+#search-overlay{
+display:none;
+position:absolute;
+left:0;
+top:0;
+width:100%;
+height:60px;
+background:#050505;
+z-index:300;
+align-items:center;
+padding:0 20px;
+}
+
+#search-input{
+flex:1;
+padding:10px;
+background:#1a1a1a;
+border:1px solid #444;
+color:#fff;
+border-radius:8px;
 }
 
 /* GRID */
@@ -89,6 +113,15 @@ outline:none;
 position:relative;
 }
 
+.fav-star{
+position:absolute;
+top:4px;
+right:6px;
+color:var(--gold);
+display:none;
+}
+.card.is-fav .fav-star{display:block;}
+
 .logo-box{
 height:75px;
 display:flex;
@@ -98,7 +131,6 @@ background:#111;
 margin:4px;
 border-radius:8px;
 }
-
 .logo-box img{width:70%;height:70%;object-fit:contain}
 
 .name{
@@ -110,10 +142,24 @@ white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipsis;
 }
+
+#osd-number{
+position:fixed;
+top:10%;
+right:5%;
+background:var(--accent);
+font-size:50px;
+padding:10px 25px;
+border-radius:15px;
+display:none;
+z-index:1000;
+}
 </style>
 </head>
 
 <body>
+
+<div id="osd-number"></div>
 
 <div id="player-wrapper">
 <video id="tv-player" class="video-js vjs-default-skin" controls preload="auto"></video>
@@ -121,9 +167,18 @@ text-overflow:ellipsis;
 
 <div id="ui-overlay">
 
+<div id="search-overlay">
+<input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
+<button class="tab" onclick="toggleSearch(false)">বন্ধ</button>
+</div>
+
 <div class="tabs-container">
-<div class="tab" tabindex="0">সব</div>
-<button class="serial-fullscreen-btn" tabindex="0" onclick="goFullscreen()">⛶ FULL</button>
+<div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
+<div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
+<div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
+<div class="apk-btn" tabindex="0">📥 APK</div>
+<div id="recent-box" style="display:flex;gap:8px;"></div>
+<button class="fs-btn" tabindex="0" onclick="goFullscreen()">⛶ FULL</button>
 </div>
 
 <div id="channel-grid" class="grid"></div>
@@ -132,39 +187,44 @@ text-overflow:ellipsis;
 <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
 
 <script>
-const player = videojs('tv-player');
-
-const m3uUrl='https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+const player=videojs('tv-player');
+const m3uUrl='YOUR_M3U_LINK';
 
 let allChannels=[];
+let favorites=JSON.parse(localStorage.getItem('zeno_favs'))||[];
+let recents=JSON.parse(localStorage.getItem('zeno_recents'))||[];
 let longPressTimer=null;
+let numBuffer="",numTimeout=null;
 
-/* LOAD CHANNEL */
 async function init(){
 const res=await fetch(m3uUrl);
 const data=await res.text();
 const lines=data.split('\n');
-let name="",logo="";
+let name="",logo="",group="";
 lines.forEach(line=>{
 if(line.includes('#EXTINF')){
 name=line.split(',').pop().trim();
 logo=(line.match(/tvg-logo="([^"]+)"/)||[])[1]||"";
+group=(line.match(/group-title="([^"]+)"/)||[])[1]||"";
 }
 else if(line.startsWith('http')){
-allChannels.push({name,url:line.trim(),logo});
+allChannels.push({name,url:line.trim(),logo,group});
 }
 });
 renderGrid(allChannels);
+renderRecent();
 }
 
 function renderGrid(list){
 const grid=document.getElementById('channel-grid');
 grid.innerHTML='';
 list.forEach((ch,index)=>{
+const isFav=favorites.includes(ch.url);
 const card=document.createElement('div');
-card.className='card';
+card.className='card'+(isFav?' is-fav':'');
 card.tabIndex=0;
 card.innerHTML=`
+<div class="fav-star">⭐</div>
 <div class="logo-box">
 <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'">
 </div>
@@ -173,8 +233,7 @@ card.innerHTML=`
 card.onclick=()=>playChannel(ch);
 card.onmousedown=()=>startLongPress(ch);
 card.onmouseup=clearLongPress;
-card.ontouchstart=()=>startLongPress(ch);
-card.ontouchend=clearLongPress;
+card.ondblclick=()=>toggleFavorite(ch);
 grid.appendChild(card);
 });
 }
@@ -182,31 +241,63 @@ grid.appendChild(card);
 function playChannel(ch){
 player.src({src:ch.url,type:'application/x-mpegURL'});
 player.play();
+recents=[ch,...recents.filter(i=>i.url!==ch.url)].slice(0,4);
+localStorage.setItem('zeno_recents',JSON.stringify(recents));
+renderRecent();
 }
 
-/* LONG PRESS FULLSCREEN */
+function toggleFavorite(ch){
+if(favorites.includes(ch.url))
+favorites=favorites.filter(i=>i!==ch.url);
+else favorites.push(ch.url);
+localStorage.setItem('zeno_favs',JSON.stringify(favorites));
+renderGrid(allChannels);
+}
+
+function renderRecent(){
+const box=document.getElementById('recent-box');
+box.innerHTML='';
+recents.forEach(ch=>{
+const pill=document.createElement('div');
+pill.className='recent-pill';
+pill.tabIndex=0;
+pill.innerText=ch.name.substring(0,6);
+pill.onclick=()=>playChannel(ch);
+box.appendChild(pill);
+});
+}
+
+function toggleSearch(show){
+document.getElementById('search-overlay').style.display=show?'flex':'none';
+}
+
+function searchChannels(q){
+renderGrid(allChannels.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())));
+}
+
+function filterCategory(cat){
+if(cat==='Favorite')
+renderGrid(allChannels.filter(c=>favorites.includes(c.url)));
+else
+renderGrid(allChannels);
+}
+
+function goFullscreen(){
+const wrapper=document.getElementById('player-wrapper');
+if(!document.fullscreenElement)
+wrapper.requestFullscreen();
+else document.exitFullscreen();
+}
+
 function startLongPress(ch){
 longPressTimer=setTimeout(()=>{
 playChannel(ch);
 setTimeout(()=>goFullscreen(),300);
 },700);
 }
+function clearLongPress(){clearTimeout(longPressTimer);}
 
-function clearLongPress(){
-clearTimeout(longPressTimer);
-}
-
-/* PLAYER ONLY FULLSCREEN */
-function goFullscreen(){
-const wrapper=document.getElementById('player-wrapper');
-if(!document.fullscreenElement){
-wrapper.requestFullscreen();
-}else{
-document.exitFullscreen();
-}
-}
-
-/* TV REMOTE STABLE NAVIGATION */
+/* STABLE REMOTE NAVIGATION */
 function getFocusable(){
 return Array.from(document.querySelectorAll('[tabindex="0"]'));
 }
@@ -216,22 +307,33 @@ const items=getFocusable();
 const active=document.activeElement;
 const index=items.indexOf(active);
 
+if(e.key>='0'&&e.key<='9'){
+numBuffer+=e.key;
+const osd=document.getElementById('osd-number');
+osd.innerText=numBuffer;
+osd.style.display='block';
+clearTimeout(numTimeout);
+numTimeout=setTimeout(()=>{
+const idx=parseInt(numBuffer)-1;
+if(allChannels[idx])playChannel(allChannels[idx]);
+numBuffer="";
+osd.style.display='none';
+},1500);
+}
+
 if(e.key==="ArrowRight"){
 if(index<items.length-1)items[index+1].focus();
 e.preventDefault();
 }
-
 if(e.key==="ArrowLeft"){
 if(index>0)items[index-1].focus();
 e.preventDefault();
 }
-
 if(e.key==="ArrowDown"){
-const firstCard=document.querySelector('.card');
-if(firstCard)firstCard.focus();
+const first=document.querySelector('.card');
+if(first)first.focus();
 e.preventDefault();
 }
-
 if(e.key==="Enter"){
 active.click();
 }
@@ -239,6 +341,5 @@ active.click();
 
 init();
 </script>
-
 </body>
 </html>
