@@ -41,39 +41,26 @@
         .apk-btn { background: #007bff; }
         .recent-pill img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
 
-        /* প্রিমিয়াম ফিক্সড ফুলস্ক্রিন বাটন */
+        /* প্রিমিয়াম ফুলস্ক্রিন বাটন - মেনু বারের শেষে */
         .fullscreen-btn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
+            margin-left: auto; /* একবারে ডান পাশে ঠেলে দেবে */
             background: var(--premium);
             color: #000;
             border: none;
-            padding: 12px 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 500;
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
             text-transform: uppercase;
-            font-size: 12px;
-            transition: 0.3s;
         }
 
         /* ফোকাস স্টাইল */
-        .nav-item:focus, .card:focus, .fullscreen-btn:focus { 
+        .nav-item:focus, .card:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.1); outline: none;
+            transform: scale(1.08); outline: none;
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
-            z-index: 10;
         }
         
         .fullscreen-btn:focus { 
             background: #fff !important; color: #000 !important;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
         }
 
         #main-content { padding: 20px 15px; background: var(--bg); min-height: 100vh; } 
@@ -96,14 +83,10 @@
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
 </div>
 
-<button class="fullscreen-btn nav-item" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-    <span>Full Screen</span>
-</button>
-
 <div id="ui-overlay">
     <div id="search-overlay">
         <input type="text" id="search-input" placeholder="চ্যানেল খুঁজুন..." oninput="searchChannels(this.value)">
+        <button class="nav-item" onclick="toggleSearch(false)" style="margin-left:10px;">বন্ধ</button>
     </div>
 
     <div class="tabs-container">
@@ -113,6 +96,11 @@
         <div class="nav-item tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
         <div class="nav-item apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
+        
+        <button class="nav-item fullscreen-btn" id="fs-btn" tabindex="0" onclick="toggleMainFullscreen()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            <span>FULL SCREEN</span>
+        </button>
     </div>
 
     <div id="main-content">
@@ -135,64 +123,63 @@
             const res = await fetch(m3uUrl);
             const data = await res.text();
             const lines = data.split('\n');
-            let name = "", logo = "", group = "";
+            allChannels = []; // Reset
+            
+            let tempCh = null;
             lines.forEach(line => {
-                if (line.includes('#EXTINF:')) {
-                    name = line.split(',').pop().trim();
-                    logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
-                } else if (line.startsWith('http')) {
-                    allChannels.push({ name, url: line.trim(), logo });
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const name = line.split(',').pop();
+                    const logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
+                    tempCh = { name, logo };
+                } else if (line.startsWith('http') && tempCh) {
+                    tempCh.url = line;
+                    allChannels.push(tempCh);
+                    tempCh = null;
                 }
             });
             renderGrid(allChannels);
             renderRecentPills();
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("Error loading M3U:", e); }
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach(ch => {
+        list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
             card.tabIndex = 0;
             card.innerHTML = `
-                <div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div>
+                <div class="ch-index">${index + 1}</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-
-            // ক্লিক করলে প্লে হবে
             card.onclick = () => playChannel(ch);
+            
+            // লং প্রেস লজিক
+            const handleStart = () => {
+                longPressTimer = setTimeout(() => {
+                    playChannel(ch);
+                    player.requestFullscreen();
+                }, 800);
+            };
+            const handleEnd = () => clearTimeout(longPressTimer);
 
-            // লং প্রেস লজিক ঠিক করা হয়েছে
-            card.onmousedown = (e) => startLongPress(ch);
-            card.onmouseup = () => clearLongPress();
-            card.ontouchstart = () => startLongPress(ch);
-            card.ontouchend = () => clearLongPress();
+            card.onmousedown = handleStart;
+            card.onmouseup = handleEnd;
+            card.ontouchstart = handleStart;
+            card.ontouchend = handleEnd;
 
             grid.appendChild(card);
         });
     }
 
-    function startLongPress(ch) {
-        clearTimeout(longPressTimer);
-        longPressTimer = setTimeout(() => {
-            playChannel(ch);
-            setTimeout(() => {
-                if (player.isFullscreen()) player.exitFullscreen();
-                else player.requestFullscreen();
-            }, 300);
-        }, 1000); // ১ সেকেন্ড চেপে ধরলে
-    }
-
-    function clearLongPress() {
-        clearTimeout(longPressTimer);
-    }
-
     function playChannel(ch) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play();
+        player.play().catch(e => console.log("Play failed:", e));
+        
+        // Recents Update
         recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 4);
         localStorage.setItem('zeno_recents', JSON.stringify(recents));
         renderRecentPills();
@@ -212,11 +199,8 @@
     }
 
     function toggleMainFullscreen() {
-        if (!player.isFullscreen()) {
-            player.requestFullscreen();
-        } else {
-            player.exitFullscreen();
-        }
+        if (!player.isFullscreen()) player.requestFullscreen();
+        else player.exitFullscreen();
     }
 
     function toggleSearch(show) {
@@ -225,7 +209,17 @@
         if(show) document.getElementById('search-input').focus();
     }
 
-    // রিমোট নেভিগেশন সিরিয়াল ঠিক করার উন্নত লজিক
+    function searchChannels(q) {
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+        renderGrid(filtered);
+    }
+
+    function filterCategory(cat) {
+        let list = (cat === 'Favorite') ? allChannels.filter(c => favorites.includes(c.url)) : allChannels;
+        renderGrid(list);
+    }
+
+    // রিমোট নেভিগেশন সিরিয়াল ঠিক করা হয়েছে
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
@@ -243,34 +237,26 @@
             return;
         }
 
-        const cards = Array.from(document.querySelectorAll('.card'));
         const navItems = Array.from(document.querySelectorAll('.nav-item'));
+        const cards = Array.from(document.querySelectorAll('.card'));
 
         if (active.classList.contains('card')) {
-            const cardIdx = cards.indexOf(active);
-            const cols = Math.floor(document.querySelector('.grid').offsetWidth / 145);
+            const idx = cards.indexOf(active);
+            const cols = Math.floor(document.querySelector('.grid').offsetWidth / 145) || 2;
 
-            if (e.key === 'ArrowRight' && cardIdx < cards.length - 1) cards[cardIdx + 1].focus();
-            if (e.key === 'ArrowLeft' && cardIdx > 0) cards[cardIdx - 1].focus();
-            if (e.key === 'ArrowDown' && cardIdx + cols < cards.length) cards[cardIdx + cols].focus();
-            if (e.key === 'ArrowUp') {
-                if (cardIdx < cols) navItems[0].focus(); // প্রথম সারিতে থাকলে মেনুতে যাবে
-                else cards[cardIdx - cols].focus();
-            }
-            if (e.key === 'Enter') {
-                // রিমোটের ওকে বাটনে লং প্রেস হ্যান্ডলিং
-                startLongPress(allChannels[cardIdx]);
+            if (e.key === 'ArrowRight' && idx < cards.length - 1) cards[idx + 1].focus();
+            else if (e.key === 'ArrowLeft' && idx > 0) cards[idx - 1].focus();
+            else if (e.key === 'ArrowDown' && idx + cols < cards.length) cards[idx + cols].focus();
+            else if (e.key === 'ArrowUp') {
+                if (idx < cols) navItems[1].focus(); // Go to Menu
+                else cards[idx - cols].focus();
             }
         } else {
-            const navIdx = navItems.indexOf(active);
-            if (e.key === 'ArrowRight' && navIdx < navItems.length - 1) navItems[navIdx + 1].focus();
-            if (e.key === 'ArrowLeft' && navIdx > 0) navItems[navIdx - 1].focus();
-            if (e.key === 'ArrowDown') cards[0]?.focus();
+            const idx = navItems.indexOf(active);
+            if (e.key === 'ArrowRight' && idx < navItems.length - 1) navItems[idx + 1].focus();
+            else if (e.key === 'ArrowLeft' && idx > 0) navItems[idx - 1].focus();
+            else if (e.key === 'ArrowDown') cards[0]?.focus();
         }
-    });
-
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') clearLongPress();
     });
 
     init();
