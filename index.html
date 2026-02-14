@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - Ultimate Edition</title>
+    <title>Zeno TV Premium - Ultimate Remote Edition</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; }
@@ -13,11 +13,12 @@
         .video-js { width: 100% !important; height: 100% !important; }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
-
+        
         .tabs-container { 
             display: flex; align-items: center; gap: 10px; 
             padding: 12px 20px; background: #050505; 
-            position: sticky; top: 0; z-index: 150; border-bottom: 2px solid #222;
+            position: sticky; top: 0; z-index: 150; 
+            border-bottom: 2px solid #222;
         }
         
         .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; }
@@ -25,28 +26,25 @@
         .tab, .recent-pill, .apk-btn, .search-btn { 
             padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
             background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
         }
-
-        .fullscreen-trigger {
-            margin-left: auto; display: flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
-            color: white; padding: 8px 18px; border-radius: 50px;
-            cursor: pointer; font-weight: bold; font-size: 12px;
-            border: 1.5px solid rgba(255, 255, 255, 0.3); transition: 0.3s;
-        }
-        .fullscreen-trigger svg { width: 18px; height: 18px; fill: white; }
 
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-trigger:focus { 
-            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.08); outline: none;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7); z-index: 10;
+            background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); outline: none;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
         }
 
-        #main-content { padding: 20px 15px; background: var(--bg); min-height: 100vh; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        #main-content { padding: 20px 15px; } 
+        /* গ্রিড ফিক্সড কলাম যাতে নেভিগেশন সহজ হয় */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 15px; 
+        }
         
         .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; transition: 0.2s; outline: none; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; }
+        
         .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
         .logo-box img { width: 70%; height: 70%; object-fit: contain; }
         .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -57,6 +55,7 @@
 <body>
 
 <div id="osd-number"></div>
+
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto"></video>
 </div>
@@ -66,13 +65,7 @@
         <div class="zeno-logo">ZENO</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
-        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
         <div id="recent-box" style="display:flex; gap:8px;"></div>
-        
-        <div class="fullscreen-trigger" tabindex="0" onclick="player.requestFullscreen()">
-            <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-            <span>FULL</span>
-        </div>
     </div>
 
     <div id="main-content">
@@ -85,8 +78,9 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    let allChannels = [], favorites = [], recents = [], currentCh = null;
-    let numBuffer = "", numTimeout = null, longPressTimer = null;
+    let allChannels = [], currentCh = null;
+    let numBuffer = "", numTimeout = null;
+    let longPressTimer = null;
 
     async function init() {
         try {
@@ -109,48 +103,56 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        list.forEach((ch, idx) => {
+        list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
             card.tabIndex = 0;
             card.innerHTML = `
-                <div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div>
+                <div class="ch-index">${index + 1}</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/100?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-
-            // ক্লিক এবং লং প্রেস হ্যান্ডলার
-            const handleAction = () => playChannel(ch);
-            const handleFullscreen = () => { playChannel(ch); player.requestFullscreen(); };
-
-            card.onclick = handleAction;
             
-            card.onmousedown = card.ontouchstart = () => {
-                longPressTimer = setTimeout(handleFullscreen, 800);
-            };
-            card.onmouseup = card.onmouseleave = card.ontouchend = () => {
-                clearTimeout(longPressTimer);
-            };
+            // ক্লিক করলে প্লে হবে
+            card.onclick = () => playChannel(ch);
+
+            // লং প্রেস হ্যান্ডলার (চাপ দিয়ে ধরলে ফুলস্ক্রিন)
+            card.onmousedown = () => startLongPress(ch);
+            card.onmouseup = () => clearLongPress();
+            card.ontouchstart = () => startLongPress(ch);
+            card.ontouchend = () => clearLongPress();
 
             grid.appendChild(card);
         });
+    }
+
+    function startLongPress(ch) {
+        longPressTimer = setTimeout(() => {
+            playChannel(ch);
+            player.requestFullscreen();
+        }, 800); // ৮০০ মিলিসেকেন্ড চেপে ধরলে ফুলস্ক্রিন হবে
+    }
+
+    function clearLongPress() {
+        clearTimeout(longPressTimer);
     }
 
     function playChannel(ch) {
         currentCh = ch;
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
+        // ভিডিও প্লে হওয়ার পর স্ক্রল প্লেয়ারের কাছে নিয়ে যাওয়া (অপশনাল)
+        window.scrollTo(0,0);
     }
 
-    // --- পারফেক্ট রিমোট নেভিগেশন ইঞ্জিন ---
+    // --- উন্নত রিমোট নেভিগেশন লজিক ---
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         const grid = document.querySelector('.grid');
         const cards = Array.from(document.querySelectorAll('.card'));
+        const tabs = Array.from(document.querySelectorAll('.tab'));
         
-        if (!active) return;
-
-        // নম্বর ইনপুট
+        // ১. নম্বর কি-প্যাড সাপোর্ট
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -160,41 +162,48 @@
                 const idx = parseInt(numBuffer) - 1;
                 if (allChannels[idx]) playChannel(allChannels[idx]);
                 numBuffer = ""; osd.style.display = 'none';
-            }, 1000);
+            }, 1200);
         }
 
+        // ২. সিরিয়াল গ্রিড নেভিগেশন
         if (active.classList.contains('card')) {
             const index = cards.indexOf(active);
-            const computedStyle = window.getComputedStyle(grid);
-            const cols = computedStyle.getPropertyValue('grid-template-columns').split(' ').length;
+            const containerWidth = grid.offsetWidth;
+            const cardWidth = active.offsetWidth + 15; // কার্ড + গ্যাপ
+            const cols = Math.floor(containerWidth / cardWidth);
 
-            switch(e.key) {
-                case 'ArrowRight':
-                    if (index < cards.length - 1) cards[index + 1].focus();
-                    break;
-                case 'ArrowLeft':
-                    if (index > 0) cards[index - 1].focus();
-                    break;
-                case 'ArrowUp':
-                    if (index < cols) {
-                        document.querySelector('.tab').focus();
-                    } else {
-                        cards[index - cols].focus();
-                    }
-                    break;
-                case 'ArrowDown':
-                    if (index + cols < cards.length) cards[index + cols].focus();
-                    break;
-                case 'Enter':
-                    // এন্টার চেপে ধরে রাখলে ফুলস্ক্রিন (সফটওয়্যার সাপোর্ট থাকলে)
-                    break;
+            if (e.key === 'ArrowRight') {
+                if (index < cards.length - 1) cards[index + 1].focus();
+            } 
+            else if (e.key === 'ArrowLeft') {
+                if (index > 0) cards[index - 1].focus();
+            } 
+            else if (e.key === 'ArrowDown') {
+                if (index + cols < cards.length) cards[index + cols].focus();
+            } 
+            else if (e.key === 'ArrowUp') {
+                if (index < cols) {
+                    tabs[0].focus(); // প্রথম সারিতে থাকলে ট্যাবে যাবে
+                } else {
+                    cards[index - cols].focus();
+                }
             }
-        } else if (active.classList.contains('tab') || active.classList.contains('apk-btn') || active.classList.contains('fullscreen-trigger')) {
-            if (e.key === 'ArrowDown') {
-                const firstCard = document.querySelector('.card');
-                if (firstCard) firstCard.focus();
+            else if (e.key === 'Enter') {
+                // এন্টার চেপে ধরলে ফুলস্ক্রিন করার জন্য (রিমোট সাপোর্ট)
+                startLongPress(allChannels[index]);
             }
+        } 
+        else if (active.classList.contains('tab')) {
+            const tIdx = tabs.indexOf(active);
+            if (e.key === 'ArrowRight' && tIdx < tabs.length - 1) tabs[tIdx + 1].focus();
+            if (e.key === 'ArrowLeft' && tIdx > 0) tabs[tIdx - 1].focus();
+            if (e.key === 'ArrowDown') cards[0].focus();
         }
+    });
+
+    // রিমোট এন্টার কি রিলিজ করলে লংপ্রেস ক্লিয়ার হবে
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') clearLongPress();
     });
 
     init();
