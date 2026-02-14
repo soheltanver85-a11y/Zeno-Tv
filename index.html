@@ -3,77 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Premium - Ultimate Fixed Edition</title>
+    <title>Zeno TV Premium - Perfect Grid</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --gold: #ffd700; --premium: linear-gradient(45deg, #FFD700, #FFA500); }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
-        #player-wrapper { height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 3px solid #333; }
+        #player-wrapper { height: 40vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; border-bottom: 2px solid #333; }
         .video-js { width: 100% !important; height: 100% !important; }
         
         /* ইউআই লেআউট */
-        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
+        #ui-overlay { margin-top: 40vh; height: 60vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
         /* সার্চ বার */
         #search-overlay { 
-            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 60px; 
-            background: #050505; z-index: 300; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--accent);
+            display: none; position: absolute; left: 0; top: 0; width: 100%; height: 50px; 
+            background: #050505; z-index: 300; align-items: center; padding: 0 15px; border-bottom: 2px solid var(--accent);
         }
-        #search-input { flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
+        #search-input { flex: 1; padding: 8px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 5px; outline: none; }
 
         /* ট্যাব কন্টেইনার */
         .tabs-container { 
-            display: flex; align-items: center; gap: 10px; 
-            padding: 12px 15px; background: #050505; 
+            display: flex; align-items: center; gap: 8px; 
+            padding: 10px 15px; background: #050505; 
             position: sticky; top: 0; z-index: 150; 
-            border-bottom: 2px solid #222;
+            border-bottom: 1px solid #222;
         }
         
-        .zeno-logo { font-weight: 900; font-size: 22px; color: var(--accent); font-style: italic; margin-right: 5px; }
+        .zeno-logo { font-weight: 900; font-size: 18px; color: var(--accent); font-style: italic; margin-right: 5px; }
 
         .tab, .recent-pill, .apk-btn, .search-btn { 
-            padding: 8px 12px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; 
-            background: #222; color: #eee; font-size: 12px; font-weight: bold; outline: none;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: 0.2s;
+            padding: 6px 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; 
+            background: #222; color: #eee; font-size: 11px; font-weight: bold; outline: none;
+            display: flex; align-items: center; gap: 4px; white-space: nowrap; transition: 0.2s;
         }
 
         /* ফুলস্ক্রিন বাটন - এক কোণায় ফিক্সড */
         .fullscreen-btn {
-            position: absolute;
-            right: 15px;
-            background: var(--premium);
-            color: #000;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 900;
-            z-index: 160;
-            font-size: 11px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            position: absolute; right: 10px;
+            background: var(--premium); color: #000; border: none; padding: 6px 12px;
+            border-radius: 6px; cursor: pointer; font-weight: 900; z-index: 160; font-size: 10px;
         }
 
-        /* ফোকাস স্টাইল - রিমোটের জন্য */
+        /* ফোকাস স্টাইল */
         .tab:focus, .recent-pill:focus, .card:focus, .apk-btn:focus, .search-btn:focus, .fullscreen-btn:focus { 
             background: var(--accent) !important; color: #fff !important; border-color: #fff !important; 
-            transform: scale(1.08); outline: none; box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+            transform: scale(1.05); outline: none; box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
         }
 
-        #main-content { padding: 20px 15px; min-height: 100vh; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        #main-content { padding: 15px 10px; min-height: 100vh; } 
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 3px solid transparent; position: relative; outline: none; transition: 0.2s; }
-        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 10px; padding: 2px 5px; border-bottom-right-radius: 8px; z-index: 5; }
-        .fav-star { position: absolute; top: 0; right: 0; padding: 2px 5px; color: var(--gold); font-size: 12px; display: none; }
+        /* ছোট কার্ড গ্রিড */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* কার্ডের সাইজ ছোট করা হয়েছে */
+            gap: 12px; 
+        }
+        
+        .card { background: var(--card); border-radius: 10px; cursor: pointer; border: 2px solid transparent; position: relative; outline: none; transition: 0.15s; }
+        .ch-index { position: absolute; top: 0; left: 0; background: #0088ff; color: white; font-size: 9px; padding: 1px 4px; border-bottom-right-radius: 6px; z-index: 5; }
+        .fav-star { position: absolute; top: 0; right: 0; padding: 1px 4px; color: var(--gold); font-size: 10px; display: none; }
         .is-fav .fav-star { display: block; }
 
-        .logo-box { height: 75px; display: flex; align-items: center; justify-content: center; background: #111; margin: 4px; border-radius: 8px; }
-        .logo-box img { width: 70%; height: 70%; object-fit: contain; }
-        .name { padding: 6px; font-size: 11px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .logo-box { height: 60px; display: flex; align-items: center; justify-content: center; background: #111; margin: 3px; border-radius: 6px; overflow: hidden; }
+        .logo-box img { width: 80%; height: 80%; object-fit: contain; }
+        .name { padding: 4px; font-size: 10px; font-weight: bold; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 50px; padding: 10px 25px; border-radius: 15px; display: none; z-index: 1000; font-weight: bold; }
+        #osd-number { position: fixed; top: 10%; right: 5%; background: var(--accent); color: white; font-size: 40px; padding: 8px 20px; border-radius: 12px; display: none; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -95,11 +92,10 @@
         <div class="search-btn" tabindex="0" onclick="toggleSearch(true)">🔍</div>
         <div class="tab" tabindex="0" onclick="filterCategory('All')">সব</div>
         <div class="tab" tabindex="0" onclick="filterCategory('Favorite')">⭐</div>
-        <div class="apk-btn" tabindex="0" onclick="window.location.href='YOUR_LINK'">📥 APK</div>
-        <div id="recent-box" style="display:flex; gap:8px;"></div>
+        <div id="recent-box" style="display:flex; gap:5px;"></div>
         
         <button class="fullscreen-btn" id="fs-btn" tabindex="0" onclick="forceFullscreen()">
-            <span>FULLSCREEN</span>
+            <span>FULL</span>
         </button>
     </div>
 
@@ -113,7 +109,7 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     
-    let allChannels = [];
+    let allChannels = [], currentCh = null;
     let favorites = JSON.parse(localStorage.getItem('zeno_favs')) || [];
     let recents = JSON.parse(localStorage.getItem('zeno_recents')) || [];
     let numBuffer = "", numTimeout = null, longPressTimer = null;
@@ -137,15 +133,14 @@
         } catch(e) { console.error(e); }
     }
 
-    // পাওয়ারফুল ফুলস্ক্রিন ফাংশন
     function forceFullscreen() {
-        if (player.isFullscreen()) {
-            player.exitFullscreen();
-        } else {
-            player.requestFullscreen();
-            const pWrap = document.getElementById('player-wrapper');
+        const pWrap = document.getElementById('player-wrapper');
+        if (!document.fullscreenElement) {
             if (pWrap.requestFullscreen) pWrap.requestFullscreen();
             else if (pWrap.webkitRequestFullscreen) pWrap.webkitRequestFullscreen();
+            player.requestFullscreen();
+        } else {
+            document.exitFullscreen();
         }
     }
 
@@ -153,9 +148,8 @@
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
         list.forEach((ch) => {
-            const isFav = favorites.includes(ch.url);
             const card = document.createElement('div');
-            card.className = `card ${isFav ? 'is-fav' : ''}`;
+            card.className = `card ${favorites.includes(ch.url) ? 'is-fav' : ''}`;
             card.tabIndex = 0;
             card.innerHTML = `
                 <div class="ch-index">${allChannels.findIndex(i => i.url === ch.url) + 1}</div>
@@ -164,20 +158,17 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ক্লিক ও লং প্রেস লজিক
             const startPress = () => {
                 longPressTimer = setTimeout(() => {
                     playChannel(ch);
-                    setTimeout(forceFullscreen, 500); // ৮০০ms পর অটো ফুলস্ক্রিন
+                    setTimeout(forceFullscreen, 500);
                 }, 800);
             };
-            const stopLongPress = () => clearTimeout(longPressTimer);
+            const stopPress = () => clearTimeout(longPressTimer);
 
             card.onclick = () => playChannel(ch);
-            card.onmousedown = startPress;
-            card.onmouseup = stopLongPress;
-            card.ontouchstart = startPress;
-            card.ontouchend = stopLongPress;
+            card.onmousedown = startPress; card.onmouseup = stopPress;
+            card.ontouchstart = startPress; card.ontouchend = stopPress;
 
             grid.appendChild(card);
         });
@@ -186,7 +177,7 @@
     function playChannel(ch) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play();
-        recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 4);
+        recents = [ch, ...recents.filter(i => i.url !== ch.url)].slice(0, 3);
         localStorage.setItem('zeno_recents', JSON.stringify(recents));
         renderRecentPills();
     }
@@ -198,15 +189,14 @@
             const pill = document.createElement('div');
             pill.className = 'recent-pill';
             pill.tabIndex = 0;
-            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,6)}</span>`;
+            pill.innerHTML = `<img src="${ch.logo}"> <span>${ch.name.substring(0,5)}</span>`;
             pill.onclick = () => playChannel(ch);
             box.appendChild(pill);
         });
     }
 
     function toggleSearch(show) {
-        const overlay = document.getElementById('search-overlay');
-        overlay.style.display = show ? 'flex' : 'none';
+        document.getElementById('search-overlay').style.display = show ? 'flex' : 'none';
         if(show) document.getElementById('search-input').focus();
     }
 
@@ -220,11 +210,10 @@
         renderGrid(list);
     }
 
-    // স্মার্ট রিমোট নেভিগেশন (একদম সঠিক সিরিয়াল)
+    // রিমোট নেভিগেশন ফিক্স
     window.addEventListener('keydown', (e) => {
         const active = document.activeElement;
         
-        // নম্বর টিপে চ্যানেল চেঞ্জ
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -234,15 +223,15 @@
                 const idx = parseInt(numBuffer) - 1;
                 if (allChannels[idx]) playChannel(allChannels[idx]);
                 numBuffer = ""; osd.style.display = 'none';
-            }, 1500);
+            }, 1200);
             return;
         }
 
         const cards = Array.from(document.querySelectorAll('.card'));
-        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .apk-btn, .recent-pill, .fullscreen-btn'));
-        const currentIndex = cards.indexOf(active);
+        const navItems = Array.from(document.querySelectorAll('.tab, .search-btn, .recent-pill, .fullscreen-btn'));
         const grid = document.querySelector('.grid');
-        const columns = Math.floor(grid.offsetWidth / 140) || 2;
+        const columns = Math.floor(grid.offsetWidth / 110) || 3;
+        const currentIndex = cards.indexOf(active);
 
         if (active.classList.contains('card')) {
             if (e.key === 'ArrowRight' && currentIndex < cards.length - 1) cards[currentIndex + 1].focus();
@@ -252,7 +241,7 @@
                 if (currentIndex < columns) navItems[0].focus();
                 else cards[currentIndex - columns].focus();
             }
-            else if (e.key === 'Enter') playChannel(allChannels[currentIndex]); // রিমোট ওকে বাটন
+            else if (e.key === 'Enter') playChannel(allChannels[currentIndex]);
         } else {
             const menuIdx = navItems.indexOf(active);
             if (e.key === 'ArrowRight' && menuIdx < navItems.length - 1) navItems[menuIdx + 1].focus();
