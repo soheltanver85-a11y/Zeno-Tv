@@ -3,69 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Pro - Fixed Focus</title>
+    <title>Zeno TV - Final Number Fix</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
     <style>
-        :root { 
-            --accent: #ff0000; 
-            --bg: #050505; 
-            --card: #1a1a1a; 
-            --blue: #0088ff;
-        }
-        
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 200; 
-            display: flex; justify-content: center; align-items: center;
+            display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; }
+        #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
-        /* গ্যাপ না বাড়িয়ে প্যাডিং দিয়ে সেফ জোন তৈরি */
+        /* বড় ক্যাটাগরি বাটন */
         .tabs-container { 
-            display: flex; align-items: center; gap: 8px; 
-            padding: 10px 15px; background: #080808; 
+            display: flex; align-items: center; gap: 12px; 
+            padding: 15px 20px; background: #080808; 
             position: sticky; top: 0; z-index: 150; 
             border-bottom: 2px solid #222; overflow-x: auto;
-            scrollbar-width: none;
         }
 
         .tab, .apk-btn, .refresh-btn, .custom-fs-btn, .search-toggle-btn { 
-            padding: 8px 14px; border-radius: 8px; cursor: pointer; background: #222; 
-            color: #eee; font-weight: bold; outline: none; border: 2px solid transparent;
-            white-space: nowrap; font-size: 13px;
+            padding: 14px 24px; border-radius: 12px; cursor: pointer; background: #222; 
+            color: #fff; font-weight: bold; font-size: 16px; outline: none; border: 2px solid transparent; transition: 0.2s;
+            white-space: nowrap;
         }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
-        #search-box-container { display: none; padding: 10px; background: #111; }
-        #search-input { width: 95%; padding: 10px; border-radius: 5px; background: #222; color: white; border: none; }
 
-        /* রিমোট ফোকাস স্টাইল - গ্লো ইফেক্ট দিয়ে আলাদা করা */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .search-toggle-btn:focus { 
             background: var(--accent) !important; color: #fff !important; 
-            border-color: #fff !important; transform: scale(1.03); 
-            box-shadow: 0 0 15px var(--accent); outline: none; z-index: 10;
+            border-color: #fff !important; transform: scale(1.05); 
+            box-shadow: 0 0 20px var(--accent); outline: none;
         }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
         
-        /* কার্ড ডিজাইন */
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 1.5px solid #333; position: relative; outline: none; overflow: hidden; }
-        .ch-index { position: absolute; top: 5px; left: 5px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
+        .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; border: 1px solid white; }
         
-        .logo-box { height: 85px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
+        .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .name { padding: 8px; font-size: 12px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
+        .name { padding: 10px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
 
         #osd-number { 
-            position: fixed; top: 20px; right: 20px; background: rgba(255, 0, 0, 0.9); 
-            color: white; font-size: 40px; font-weight: bold; padding: 10px 25px; 
-            border-radius: 10px; display: none; z-index: 999999; border: 2px solid white;
+            position: fixed; top: 30px; right: 30px; background: rgba(255, 0, 0, 0.95); 
+            color: white; font-size: 50px; font-weight: bold; padding: 15px 35px; 
+            border-radius: 15px; display: none; z-index: 999999; border: 3px solid white;
         }
     </style>
 </head>
@@ -78,14 +66,13 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="search-box-container"><input type="text" id="search-input" placeholder="Search..." oninput="searchChannels(this.value)"></div>
     <div class="tabs-container">
-        <button class="search-toggle-btn" tabindex="0" onclick="toggleSearch(event)">🔍</button>
-        <button class="tab" tabindex="0" onclick="showCategory('all')">সব</button>
+        <button class="search-toggle-btn" tabindex="0">🔍 সার্চ</button>
+        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
         <button class="tab" tabindex="0" onclick="showCategory('fav')">❤️ প্রিয়</button>
-        <button class="refresh-btn" tabindex="0" onclick="location.reload()">🔄</button>
-        <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 Full</button>
-        <button class="apk-btn" tabindex="0" onclick="window.location.href='#'">📥 APK</button>
+        <button class="refresh-btn" tabindex="0" onclick="location.reload()">🔄 রিফ্রেশ</button>
+        <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
+        <button class="apk-btn" tabindex="0">📥 APK</button>
     </div>
     <div id="main-content"><div id="channel-grid" class="grid"></div></div>
 </div>
@@ -96,7 +83,6 @@
     const player = videojs('tv-player');
     const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     let allChannels = [];
-    let numBuffer = "", numTimeout = null;
 
     async function init() {
         try {
@@ -118,9 +104,8 @@
 
     function goFullscreen() {
         if (player.isFullscreen()) return;
-        const p = player.el();
-        const requestMethod = p.requestFullscreen || p.webkitRequestFullScreen || p.mozRequestFullScreen || p.msRequestFullscreen;
-        if (requestMethod) requestMethod.call(p);
+        if (player.requestFullscreen) player.requestFullscreen();
+        else if (player.el().requestFullscreen) player.el().requestFullscreen();
     }
 
     function playChannel(ch) {
@@ -144,51 +129,20 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ক্লিক করলে প্লে হবে
-            card.onclick = (e) => {
-                e.stopPropagation();
-                playChannel(ch);
-            };
-
-            // লং প্রেস লজিক (রিমোট এবং টাচ উভয়ের জন্য)
-            let longPressTimer;
-            const startPress = (e) => {
-                longPressTimer = setTimeout(() => {
-                    playChannel(ch);
-                    setTimeout(goFullscreen, 500); 
-                }, 1000);
-            };
-            const endPress = () => clearTimeout(longPressTimer);
-
-            card.addEventListener('mousedown', startPress);
-            card.addEventListener('touchstart', startPress);
-            card.addEventListener('mouseup', endPress);
-            card.addEventListener('mouseleave', endPress);
-            card.addEventListener('touchend', endPress);
+            card.onclick = () => playChannel(ch);
+            card.ondblclick = () => { playChannel(ch); goFullscreen(); };
 
             grid.appendChild(card);
         });
     }
 
-    function toggleSearch(e) {
-        e.stopPropagation();
-        const box = document.getElementById('search-box-container');
-        box.style.display = (box.style.display === 'block') ? 'none' : 'block';
-        if(box.style.display === 'block') document.getElementById('search-input').focus();
-    }
-
-    function searchChannels(q) {
-        renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(q.toLowerCase())));
-    }
-
     function showCategory(type) {
-        if (type === 'fav') { /* Favorites Logic */ }
-        else renderGrid(allChannels);
+        renderGrid(allChannels);
     }
 
-    // ৫ সেকেন্ড নম্বর লজিক
+    // নম্বর লজিক - নিশ্চিতভাবে চ্যানেলে নিয়ে যাবে
+    let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        if (document.activeElement.id === 'search-input') return;
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -199,16 +153,21 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
+                
                 if (chData) {
+                    // চ্যানেলে স্ক্রল করে নিয়ে যাবে
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                     if(targetCard) {
                         targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         targetCard.focus();
                     }
+                    // চ্যানেলটি প্লে করবে
                     playChannel(chData);
                 }
-                numBuffer = ""; osd.style.display = 'none';
-            }, 5000); 
+                
+                numBuffer = ""; 
+                osd.style.display = 'none';
+            }, 5000); // ৫ সেকেন্ড সময়
         }
     });
 
