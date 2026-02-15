@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Final Number Fix</title>
+    <title>Zeno TV - Ultimate Fixed Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -19,12 +19,13 @@
         
         #ui-overlay { margin-top: 45vh; height: 55vh; overflow-y: auto; background: var(--bg); position: relative; scroll-behavior: smooth; }
         
-        /* বড় ক্যাটাগরি বাটন */
+        /* ক্যাটাগরি বাটন বড় এবং সেফ জোন সহ */
         .tabs-container { 
             display: flex; align-items: center; gap: 12px; 
-            padding: 15px 20px; background: #080808; 
+            padding: 18px 20px; background: #080808; 
             position: sticky; top: 0; z-index: 150; 
             border-bottom: 2px solid #222; overflow-x: auto;
+            pointer-events: auto; /* নিশ্চিত করা হয়েছে */
         }
 
         .tab, .apk-btn, .refresh-btn, .custom-fs-btn, .search-toggle-btn { 
@@ -43,9 +44,16 @@
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
+        /* চ্যানেল কার্ড - ইভেন্ট ম্যানেজমেন্ট সহ */
+        .card { 
+            background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; 
+            position: relative; outline: none; overflow: hidden;
+            pointer-events: auto;
+        }
+        
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 10; border: 1px solid white; }
         
+        /* লোগোতে চাপ দিলে যাতে ক্যাটাগরিতে না যায় */
         .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 10px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
@@ -66,7 +74,7 @@
 </div>
 
 <div id="ui-overlay">
-    <div class="tabs-container">
+    <div class="tabs-container" id="category-bar">
         <button class="search-toggle-btn" tabindex="0">🔍 সার্চ</button>
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
         <button class="tab" tabindex="0" onclick="showCategory('fav')">❤️ প্রিয়</button>
@@ -104,8 +112,8 @@
 
     function goFullscreen() {
         if (player.isFullscreen()) return;
-        if (player.requestFullscreen) player.requestFullscreen();
-        else if (player.el().requestFullscreen) player.el().requestFullscreen();
+        const requestMethod = player.el().requestFullscreen || player.el().webkitRequestFullScreen || player.el().mozRequestFullScreen || player.el().msRequestFullscreen;
+        if (requestMethod) requestMethod.call(player.el());
     }
 
     function playChannel(ch) {
@@ -129,8 +137,18 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            card.onclick = () => playChannel(ch);
-            card.ondblclick = () => { playChannel(ch); goFullscreen(); };
+            // সিঙ্গল ক্লিক
+            card.onclick = (e) => {
+                e.stopPropagation(); // ক্যাটাগরি মেনুতে ক্লিক যাওয়া বন্ধ করবে
+                playChannel(ch);
+            };
+
+            // ডাবল ক্লিক ফুলস্ক্রিন
+            card.ondblclick = (e) => {
+                e.stopPropagation();
+                playChannel(ch);
+                goFullscreen();
+            };
 
             grid.appendChild(card);
         });
@@ -140,7 +158,7 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর লজিক - নিশ্চিতভাবে চ্যানেলে নিয়ে যাবে
+    // ৫ সেকেন্ড নম্বর ও স্ক্রল লজিক
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
@@ -155,19 +173,15 @@
                 const chData = allChannels[targetIdx - 1];
                 
                 if (chData) {
-                    // চ্যানেলে স্ক্রল করে নিয়ে যাবে
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                     if(targetCard) {
                         targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         targetCard.focus();
                     }
-                    // চ্যানেলটি প্লে করবে
                     playChannel(chData);
                 }
-                
-                numBuffer = ""; 
-                osd.style.display = 'none';
-            }, 5000); // ৫ সেকেন্ড সময়
+                numBuffer = ""; osd.style.display = 'none';
+            }, 5000); 
         }
     });
 
