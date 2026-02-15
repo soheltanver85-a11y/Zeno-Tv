@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV Pro - Absolute Fix</title>
+    <title>Zeno TV Pro - Absolute Final Fix</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -11,55 +11,46 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* ১. প্লেয়ার সেকশন (Fixed) */
+        /* ১. প্লেয়ার সেকশন (সর্বোচ্চ লেয়ার) */
         #player-wrapper { 
-            height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 3000; 
+            height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* ২. প্রধান UI কন্টেইনার */
-        #ui-overlay { margin-top: 45vh; height: 55vh; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); }
+        /* ২. UI মূল কন্টেইনার */
+        #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        /* ৩. ক্যাটাগরি বার (Fixed Position inside UI) */
+        /* ৩. ক্যাটাগরি বার (সম্পূর্ণ আলাদা লেয়ার) */
         .tabs-container { 
-            flex-shrink: 0; /* এটি কখনোই ছোট হবে না */
-            display: flex; align-items: center; gap: 12px; 
-            padding: 15px 20px; background: #0a0a0a; 
-            border-bottom: 3px solid var(--blue);
-            overflow-x: auto; z-index: 2500;
+            flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
+            padding: 15px 20px; background: #0a0a0a; z-index: 3500;
+            border-bottom: 3px solid var(--blue); overflow-x: auto;
         }
 
-        .tab, .apk-btn, .refresh-btn, .custom-fs-btn, .search-toggle-btn { 
+        .tab, .apk-btn, .refresh-btn, .custom-fs-btn { 
             padding: 14px 26px; border-radius: 12px; cursor: pointer; background: #222; 
-            color: #fff; font-weight: bold; font-size: 16px; outline: none; border: 2px solid transparent;
+            color: #fff; font-weight: bold; font-size: 16px; border: 2px solid transparent; outline: none;
             white-space: nowrap; transition: 0.2s;
         }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
-
-        /* ৪. স্ক্রলযোগ্য চ্যানেল গ্রিড (ক্যাটাগরি থেকে সম্পূর্ণ আলাদা) */
-        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
-        
-        .card { 
-            background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; 
-            position: relative; outline: none; overflow: hidden;
-        }
-        
-        /* রিমোট ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
             box-shadow: 0 0 20px var(--accent); z-index: 10;
         }
 
+        /* ৪. আলাদা স্ক্রলযোগ্য চ্যানেল গ্রিড (সেফ জোন গ্যারান্টি) */
+        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; outline: none; overflow: hidden; }
         .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর */
+        /* ওএসডি নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -114,10 +105,16 @@
         } catch(e) { console.error(e); }
     }
 
+    // ফুলস্ক্রিন ফাংশন যা সব ডিভাইসে কাজ করবে
     function goFullscreen() {
-        const p = player.el();
+        const p = document.getElementById('tv-player');
         if (p.requestFullscreen) p.requestFullscreen();
         else if (p.webkitRequestFullscreen) p.webkitRequestFullscreen();
+        else if (p.mozRequestFullScreen) p.mozRequestFullScreen();
+        else if (p.msRequestFullscreen) p.msRequestFullscreen();
+        // Video.js এর নিজস্ব মেথড
+        if (player.isFullscreen()) return;
+        player.requestFullscreen();
     }
 
     function playChannel(ch) {
@@ -141,20 +138,24 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            // ডাবল ক্লিক এবং সিঙ্গল ক্লিক লজিক
-            let clickCount = 0;
+            // ডাবল ক্লিক লজিক (ফুলস্ক্রিন গ্যারান্টি সহ)
+            let lastClick = 0;
             card.addEventListener('click', (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // ক্লিকটি এই কার্ডেই সীমাবদ্ধ থাকবে
+                e.stopPropagation(); 
                 
-                clickCount++;
-                if (clickCount === 1) {
-                    setTimeout(() => {
-                        if (clickCount === 1) playChannel(ch); // সিঙ্গল ক্লিক
-                        else { playChannel(ch); setTimeout(goFullscreen, 200); } // ডাবল ক্লিক
-                        clickCount = 0;
-                    }, 300);
+                let currentTime = new Date().getTime();
+                let gap = currentTime - lastClick;
+                
+                if (gap < 400 && gap > 0) { 
+                    // ডাবল ক্লিক ধরা হয়েছে
+                    playChannel(ch);
+                    setTimeout(goFullscreen, 500); 
+                } else {
+                    // সিঙ্গল ক্লিক
+                    playChannel(ch);
                 }
+                lastClick = currentTime;
             });
 
             grid.appendChild(card);
