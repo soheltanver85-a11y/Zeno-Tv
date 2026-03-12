@@ -70,7 +70,7 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <button class="tab" tabindex="0">সব চ্যানেল</button>
+        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0">📥 APK</button>
@@ -86,33 +86,29 @@
 <script>
     const player = videojs('tv-player');
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    let allChannels = [];
+    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
 
-    // ১. ইনিশিয়াল ফাংশন - ক্যাশ থেকে সাথে সাথে লোড করবে
+    let allChannels = [];
+    let lastFocusedCard = null;
+
+    // ১. ইনিশিয়াল ফাংশন: প্রথমে ক্যাশ চেক করবে, তারপর নেট থেকে আপডেট আনবে
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
+            console.log("Loaded from cache");
         }
         
-        // ব্যাকগ্রাউন্ডে সার্ভার থেকে ডাটা আপডেট করবে
+        // ব্যাকগ্রাউন্ডে নেট থেকে ডাটা আনা হচ্ছে
         await fetchChannels();
-        
-        // প্রতি ২০ সেকেন্ড পর পর নিজে নিজে আপডেট খুঁজবে (অটো আপডেট)
-        setInterval(fetchChannels, 20000);
     }
 
     async function fetchChannels() {
         try {
-            const token = Date.now();
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}&v=${token}`;
-            
-            const res = await fetch(proxyUrl);
+            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
             const data = await res.text();
             
-            if (!data || data.length < 50) return;
-
             const lines = data.split('\n');
             let name = "", logo = "";
             let newChannels = [];
@@ -124,23 +120,39 @@
                     name = nameParts[nameParts.length - 1].trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
-                    newChannels.push({ name: name || "Channel", url: line, logo: logo });
+                    newChannels.push({ name: name || "Channel", url: line, logo });
                 }
             });
 
             if (newChannels.length > 0) {
-                const oldHash = JSON.stringify(allChannels);
-                const newHash = JSON.stringify(newChannels);
-
-                // যদি প্লেলিস্টে পরিবর্তন থাকে তবেই গ্রিড আপডেট হবে
-                if (oldHash !== newHash) {
-                    allChannels = newChannels;
-                    localStorage.setItem('zeno_cache', newHash);
-                    renderGrid(allChannels);
-                }
+                allChannels = newChannels;
+                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
+                renderGrid(allChannels); // গ্রিড আপডেট
             }
         } catch(e) { 
             console.error("Fetch error:", e);
+        }
+    }
+
+    function forceRefresh() {
+        localStorage.removeItem('zeno_cache');
+        location.reload();
+    }
+
+    function goFullscreen() {
+        if (player.isFullscreen()) {
+            player.exitFullscreen();
+        } else {
+            player.requestFullscreen();
+        }
+    }
+
+    function playChannel(ch, cardElement) {
+        player.src({ src: ch.url, type: 'application/x-mpegURL' });
+        player.play().catch(()=>{});
+        if(cardElement) {
+            lastFocusedCard = cardElement;
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }
 
@@ -151,16 +163,17 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.tabIndex = 0;
-            card.setAttribute('data-index', index + 1);
+            const originalIdx = index + 1;
+            card.setAttribute('data-index', originalIdx);
             
             card.innerHTML = `
-                <div class="ch-index">${index + 1}</div>
+                <div class="ch-index">${originalIdx}</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
 
             let lastClick = 0;
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
                 let currentTime = new Date().getTime();
                 if (currentTime - lastClick < 400) { 
                     playChannel(ch, card);
@@ -171,30 +184,13 @@
                 lastClick = currentTime;
             });
 
+            card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
     }
 
-    function playChannel(ch, cardElement) {
-        player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play().catch(()=>{});
-        if(cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    function forceRefresh() {
-        const btn = document.querySelector('.refresh-btn');
-        btn.innerText = "⏳...";
-        localStorage.removeItem('zeno_cache');
-        fetchChannels().finally(() => {
-            setTimeout(() => btn.innerText = "🔄 রিফ্রেশ", 1000);
-        });
-    }
-
-    function goFullscreen() {
-        if (player.isFullscreen()) player.exitFullscreen();
-        else player.requestFullscreen();
+    function showCategory(type) {
+        renderGrid(allChannels);
     }
 
     // নম্বর লজিক (Remote Control & OSD)
@@ -216,11 +212,13 @@
                     if(targetCard) {
                         targetCard.focus();
                         playChannel(chData, targetCard);
+                    } else {
+                        playChannel(chData, null);
                     }
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 2000); 
+            }, 2500); 
         }
     });
 
