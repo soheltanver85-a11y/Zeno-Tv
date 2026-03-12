@@ -34,20 +34,20 @@
             white-space: nowrap; transition: 0.2s;
         }
 
-        /* সার্চ বক্স স্টাইল */
+        /* সার্চ বক্স স্টাইল - এটি অনেক লম্বা হবে */
         #search-input {
-            flex-grow: 1; min-width: 250px; padding: 14px 20px; border-radius: 12px; 
-            border: 2px solid #333; background: #1a1a1a; color: #fff; font-size: 16px; 
+            flex-grow: 1; min-width: 300px; padding: 14px 20px; border-radius: 12px; 
+            border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
             outline: none; transition: 0.3s;
         }
-        #search-input:focus { border-color: var(--blue); background: #222; }
+        #search-input:focus { border-color: var(--blue); background: #1a1a1a; box-shadow: 0 0 10px rgba(0, 136, 255, 0.3); }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
         /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, #search-input:focus { 
             border-color: #fff !important; transform: scale(1.02); 
-            box-shadow: 0 0 15px rgba(255,255,255,0.2); z-index: 10; outline: none;
+            z-index: 10; outline: none;
         }
 
         /* চ্যানেল গ্রিড */
@@ -101,19 +101,23 @@
     let allChannels = [];
     let lastFocusedCard = null;
 
+    // ১. ইনিশিয়াল ফাংশন
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
-        await fetchChannels();
+        await fetchChannels(); // ব্যাকগ্রাউন্ডে ফ্রেশ ডাটা আনা
     }
 
+    // ২. চ্যানেল লোড করার ফাংশন (টাইমস্ট্যাম্পসহ যাতে দ্রুত ফ্রেশ ডাটা আসে)
     async function fetchChannels() {
         try {
-            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
+            const freshUrl = m3uUrl + '&t=' + new Date().getTime();
+            const res = await fetch(freshUrl);
             const data = await res.text();
+            
             const lines = data.split('\n');
             let name = "", logo = "";
             let newChannels = [];
@@ -132,25 +136,33 @@
             if (newChannels.length > 0) {
                 allChannels = newChannels;
                 localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                // যদি সার্চ বক্সে কিছু লেখা না থাকে তবেই গ্রিড অটো আপডেট হবে
+                
+                // সার্চ বক্স খালি থাকলে তবেই অটো আপডেট হবে
                 if(!document.getElementById('search-input').value) {
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("Error fetching channels:", e); }
     }
 
-    // সার্চ লজিক
+    // ৩. রিফ্রেশ বাটন ফাংশন (সাথে সাথে ক্লিয়ার হবে)
+    async function forceRefresh() {
+        const grid = document.getElementById('channel-grid');
+        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">চ্যানেল আপডেট হচ্ছে... দয়া করে অপেক্ষা করুন।</h2>';
+        
+        localStorage.removeItem('zeno_cache');
+        allChannels = [];
+        document.getElementById('search-input').value = ""; // সার্চ ক্লিয়ার করা
+        
+        await fetchChannels();
+    }
+
+    // ৪. সার্চ লজিক (টাইপ করার সাথে সাথে গ্রিড আপডেট)
     document.getElementById('search-input').addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
         renderGrid(filtered);
     });
-
-    function forceRefresh() {
-        localStorage.removeItem('zeno_cache');
-        location.reload();
-    }
 
     function goFullscreen() {
         if (player.isFullscreen()) { player.exitFullscreen(); } 
@@ -169,6 +181,12 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
+        
+        if(list.length === 0) {
+            grid.innerHTML = '<p style="text-align:center; width:100%;">দুঃখিত, কোনো চ্যানেল পাওয়া যায়নি।</p>';
+            return;
+        }
+
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -204,11 +222,12 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর লজিক (Remote Control)
+    // নম্বর লজিক (Remote Control/Keyboard)
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT') return; // সার্চ বক্সে টাইপ করলে নম্বর লজিক বন্ধ থাকবে
-        
+        // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক কাজ করবে না
+        if (document.activeElement.id === 'search-input') return;
+
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
