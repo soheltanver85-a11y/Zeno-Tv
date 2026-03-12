@@ -35,10 +35,9 @@
         }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
-        .apk-btn { background: #28a745; color: white; }
 
         /* ফোকাস স্টাইল */
-        .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .apk-btn:focus { 
+        .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
             box-shadow: 0 0 20px var(--accent); z-index: 10; outline: none;
         }
@@ -74,7 +73,7 @@
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        <button class="apk-btn" tabindex="0" onclick="window.open('https://www.mediafire.com/file/qt2qmp86gx6b667/Zeno_TV_1.0.0.apk/file', '_blank')">📥 APK</button>
+        <button class="apk-btn" tabindex="0">📥 APK</button>
     </div>
 
     <div id="scroll-content">
@@ -87,39 +86,29 @@
 <script>
     const player = videojs('tv-player');
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    
+    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
+
     let allChannels = [];
     let lastFocusedCard = null;
 
+    // ১. ইনিশিয়াল ফাংশন: প্রথমে ক্যাশ চেক করবে, তারপর নেট থেকে আপডেট আনবে
     async function init() {
-        // প্রথমে ক্যাশ থেকে লোড হবে
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
+            console.log("Loaded from cache");
         }
         
-        // ব্যাকগ্রাউন্ডে নেট থেকে ডাটা আপডেট আনা হচ্ছে
+        // ব্যাকগ্রাউন্ডে নেট থেকে ডাটা আনা হচ্ছে
         await fetchChannels();
     }
 
     async function fetchChannels() {
         try {
-            const timestamp = Date.now();
-            const finalRawUrl = `${rawUrl}?v=${timestamp}`;
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(finalRawUrl)}&nocache=${timestamp}`;
-            
-            const res = await fetch(proxyUrl, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            });
-
-            if (!res.ok) throw new Error('Network response was not ok');
-            
+            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
             const data = await res.text();
+            
             const lines = data.split('\n');
             let name = "", logo = "";
             let newChannels = [];
@@ -136,14 +125,9 @@
             });
 
             if (newChannels.length > 0) {
-                const oldData = localStorage.getItem('zeno_cache');
-                const newDataStr = JSON.stringify(newChannels);
-                
-                if (oldData !== newDataStr) {
-                    allChannels = newChannels;
-                    localStorage.setItem('zeno_cache', newDataStr);
-                    renderGrid(allChannels);
-                }
+                allChannels = newChannels;
+                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
+                renderGrid(allChannels); // গ্রিড আপডেট
             }
         } catch(e) { 
             console.error("Fetch error:", e);
@@ -209,6 +193,7 @@
         renderGrid(allChannels);
     }
 
+    // নম্বর লজিক (Remote Control & OSD)
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
