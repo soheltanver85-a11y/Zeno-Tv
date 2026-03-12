@@ -34,7 +34,6 @@
             white-space: nowrap; transition: 0.2s;
         }
 
-        /* সার্চ বক্স স্টাইল */
         #search-input {
             flex-grow: 1; min-width: 300px; padding: 14px 20px; border-radius: 12px; 
             border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
@@ -43,12 +42,11 @@
         #search-input:focus { border-color: var(--blue); background: #1a1a1a; }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
-        .apk-btn { background: #28a745; color: white; } /* ডাউনলোড বাটনের কালার পরিবর্তন */
+        .apk-btn { background: #28a745; color: white; }
 
-        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .apk-btn:focus, #search-input:focus { 
-            border-color: #fff !important; transform: scale(1.05); 
-            z-index: 10; outline: none; box-shadow: 0 0 15px var(--blue);
+            border-color: #fff !important; transform: scale(1.02); 
+            z-index: 10; outline: none;
         }
 
         /* চ্যানেল গ্রিড */
@@ -61,7 +59,7 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর */
+        /* OSD নম্বর (টিভি স্ক্রিনে যা দেখাবে) */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -82,7 +80,6 @@
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        
         <button class="apk-btn" tabindex="0" onclick="downloadAPK()">📥 APK</button>
         
         <input type="text" id="search-input" placeholder="🔍 ক্লিক করে সার্চ করুন..." tabindex="0" readonly>
@@ -144,35 +141,27 @@
         } catch(e) { console.error("Error fetching channels:", e); }
     }
 
-    async function forceRefresh() {
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">চ্যানেল আপডেট হচ্ছে... দয়া করে অপেক্ষা করুন।</h2>';
-        localStorage.removeItem('zeno_cache');
-        allChannels = [];
-        document.getElementById('search-input').value = ""; 
-        await fetchChannels();
-    }
-
-    // APK ডাউনলোড ফাংশন
     function downloadAPK() {
         window.open(apkDownloadUrl, '_blank');
     }
 
-    // সার্চ বক্স লজিক
     const searchInput = document.getElementById('search-input');
     searchInput.addEventListener('click', function() {
         this.readOnly = false;
         this.focus();
     });
+
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             this.readOnly = false;
             this.focus();
         }
     });
+
     searchInput.addEventListener('blur', function() {
         this.readOnly = true;
     });
+
     searchInput.addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
@@ -190,6 +179,7 @@
         if(cardElement) {
             lastFocusedCard = cardElement;
             cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardElement.focus(); // চ্যানেল প্লে হওয়ার সাথে ফোকাসও সেখানে যাবে
         }
     }
 
@@ -197,11 +187,6 @@
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
         
-        if(list.length === 0) {
-            grid.innerHTML = '<p style="text-align:center; width:100%;">দুঃখিত, কোনো চ্যানেল পাওয়া যায়নি।</p>';
-            return;
-        }
-
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -215,16 +200,8 @@
                 <div class="name">${ch.name}</div>
             `;
 
-            let lastClick = 0;
             card.addEventListener('click', () => {
-                let currentTime = new Date().getTime();
-                if (currentTime - lastClick < 400) { 
-                    playChannel(ch, card);
-                    setTimeout(goFullscreen, 400); 
-                } else {
-                    playChannel(ch, card);
-                }
-                lastClick = currentTime;
+                playChannel(ch, card);
             });
 
             card.addEventListener('focus', () => { lastFocusedCard = card; });
@@ -237,12 +214,12 @@
         renderGrid(allChannels);
     }
 
-    // রিমোট নম্বর ও বাটন লজিক
+    // --- নম্বর টিপে চ্যানেল পরিবর্তনের লজিক (১ লিখলে ১ নম্বর চ্যানেল চলবে) ---
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
+        // যদি সার্চ বক্সে টাইপ করা অবস্থায় থাকে, তবে নম্বর লজিক কাজ করবে না
         if (document.activeElement.id === 'search-input' && !document.activeElement.readOnly) return;
 
-        // নম্বর ইনপুট লজিক
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -252,15 +229,17 @@
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
-                const chData = allChannels[targetIdx - 1];
+                const chData = allChannels[targetIdx - 1]; // Array index ০ থেকে শুরু হয়
+                
                 if (chData) {
+                    // গ্রিড থেকে ওই নম্বরের কার্ডটি খুঁজে বের করা
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) { targetCard.focus(); playChannel(chData, targetCard); }
-                    else { playChannel(chData, null); }
+                    playChannel(chData, targetCard);
                 }
+                
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 2000); 
+            }, 1800); // ১.৮ সেকেন্ড পর অটো প্লে হবে
         }
     });
 
