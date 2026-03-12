@@ -34,13 +34,14 @@
             white-space: nowrap; transition: 0.2s;
         }
 
-        /* সার্চ বক্স স্টাইল - এটি অনেক লম্বা হবে */
+        /* সার্চ বক্স স্টাইল */
         #search-input {
             flex-grow: 1; min-width: 300px; padding: 14px 20px; border-radius: 12px; 
             border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
             outline: none; transition: 0.3s;
         }
-        #search-input:focus { border-color: var(--blue); background: #1a1a1a; box-shadow: 0 0 10px rgba(0, 136, 255, 0.3); }
+        /* ফোকাস হলে বর্ডার নীল হবে কিন্তু কিবোর্ড আসবে না যতক্ষণ না ক্লিক করা হয় */
+        #search-input:focus { border-color: var(--blue); background: #1a1a1a; }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
@@ -83,7 +84,7 @@
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0">📥 APK</button>
         
-        <input type="text" id="search-input" placeholder="🔍 চ্যানেল সার্চ করুন..." tabindex="0">
+        <input type="text" id="search-input" placeholder="🔍 ক্লিক করে সার্চ করুন..." tabindex="0" readonly>
     </div>
 
     <div id="scroll-content">
@@ -108,10 +109,10 @@
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
-        await fetchChannels(); // ব্যাকগ্রাউন্ডে ফ্রেশ ডাটা আনা
+        await fetchChannels(); 
     }
 
-    // ২. চ্যানেল লোড করার ফাংশন (টাইমস্ট্যাম্পসহ যাতে দ্রুত ফ্রেশ ডাটা আসে)
+    // ২. চ্যানেল লোড ফাংশন
     async function fetchChannels() {
         try {
             const freshUrl = m3uUrl + '&t=' + new Date().getTime();
@@ -136,8 +137,6 @@
             if (newChannels.length > 0) {
                 allChannels = newChannels;
                 localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                
-                // সার্চ বক্স খালি থাকলে তবেই অটো আপডেট হবে
                 if(!document.getElementById('search-input').value) {
                     renderGrid(allChannels);
                 }
@@ -145,24 +144,42 @@
         } catch(e) { console.error("Error fetching channels:", e); }
     }
 
-    // ৩. রিফ্রেশ বাটন ফাংশন (সাথে সাথে ক্লিয়ার হবে)
+    // ৩. রিফ্রেশ ফাংশন
     async function forceRefresh() {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">চ্যানেল আপডেট হচ্ছে... দয়া করে অপেক্ষা করুন।</h2>';
-        
         localStorage.removeItem('zeno_cache');
         allChannels = [];
-        document.getElementById('search-input').value = ""; // সার্চ ক্লিয়ার করা
-        
+        document.getElementById('search-input').value = ""; 
         await fetchChannels();
     }
 
-    // ৪. সার্চ লজিক (টাইপ করার সাথে সাথে গ্রিড আপডেট)
-    document.getElementById('search-input').addEventListener('input', function(e) {
+    // --- ৪. সার্চ বক্স স্পেশাল লজিক (ক্লিক করলে কিবোর্ড আসবে) ---
+    const searchInput = document.getElementById('search-input');
+
+    searchInput.addEventListener('click', function() {
+        this.readOnly = false; // ক্লিক করলে টাইপিং মোড অন হবে
+        this.focus();
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        // রিমোটের 'OK' বা কিবোর্ডের 'Enter' চাপলে টাইপিং শুরু হবে
+        if (e.key === 'Enter') {
+            this.readOnly = false;
+            this.focus();
+        }
+    });
+
+    searchInput.addEventListener('blur', function() {
+        this.readOnly = true; // ফোকাস চলে গেলে আবার লক হয়ে যাবে
+    });
+
+    searchInput.addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
         renderGrid(filtered);
     });
+    // -----------------------------------------------------
 
     function goFullscreen() {
         if (player.isFullscreen()) { player.exitFullscreen(); } 
@@ -222,11 +239,11 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর লজিক (Remote Control/Keyboard)
+    // রিমোট নম্বর লজিক
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক কাজ করবে না
-        if (document.activeElement.id === 'search-input') return;
+        // যদি সার্চ বক্স এডিটিং মোডে থাকে (readonly না থাকে), তবে নম্বর লজিক বন্ধ থাকবে
+        if (document.activeElement.id === 'search-input' && !document.activeElement.readOnly) return;
 
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
