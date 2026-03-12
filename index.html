@@ -29,38 +29,42 @@
         }
 
         .tab, .apk-btn, .refresh-btn, .custom-fs-btn { 
-            padding: 12px 20px; border-radius: 12px; cursor: pointer; background: #222; 
-            color: #fff; font-weight: bold; font-size: 14px; border: 2px solid transparent; outline: none;
+            padding: 14px 26px; border-radius: 12px; cursor: pointer; background: #222; 
+            color: #fff; font-weight: bold; font-size: 16px; border: 2px solid transparent; outline: none;
             white-space: nowrap; transition: 0.2s;
         }
 
+        /* সার্চ বক্স স্টাইল - এটি অনেক লম্বা হবে */
         #search-input {
-            flex-grow: 1; min-width: 200px; padding: 12px 20px; border-radius: 12px; 
-            border: 2px solid #333; background: #111; color: #fff; font-size: 15px; 
+            flex-grow: 1; min-width: 300px; padding: 14px 20px; border-radius: 12px; 
+            border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
             outline: none; transition: 0.3s;
         }
-        #search-input:focus { border-color: var(--blue); background: #1a1a1a; }
+        #search-input:focus { border-color: var(--blue); background: #1a1a1a; box-shadow: 0 0 10px rgba(0, 136, 255, 0.3); }
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
+        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, #search-input:focus { 
-            border-color: #fff !important; transform: scale(1.02); outline: none;
+            border-color: #fff !important; transform: scale(1.02); 
+            z-index: 10; outline: none;
         }
 
         /* চ্যানেল গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 12px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; transition: 0.2s; }
-        .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; }
+        .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .name { padding: 10px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
-        .ch-index { position: absolute; top: 5px; left: 5px; background: var(--blue); color: white; font-size: 11px; font-weight: bold; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
+        .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
+        .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
-            color: white; font-size: 50px; font-weight: bold; padding: 10px 30px; 
-            border-radius: 12px; display: none; z-index: 99999; border: 2px solid white;
+            color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
+            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
         }
     </style>
 </head>
@@ -74,10 +78,12 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <button class="tab" onclick="renderGrid(allChannels)">সব চ্যানেল</button>
-        <button class="refresh-btn" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
-        <button class="custom-fs-btn" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        <input type="text" id="search-input" placeholder="🔍 চ্যানেল সার্চ করুন...">
+        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
+        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
+        <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
+        <button class="apk-btn" tabindex="0">📥 APK</button>
+        
+        <input type="text" id="search-input" placeholder="🔍 চ্যানেল সার্চ করুন..." tabindex="0">
     </div>
 
     <div id="scroll-content">
@@ -90,26 +96,26 @@
 <script>
     const player = videojs('tv-player');
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    
-    // Fast Proxy Selection
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(rawUrl);
+    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
 
     let allChannels = [];
+    let lastFocusedCard = null;
 
-    // ১. ইনিশিয়াল ফাংশন (সাথে সাথে লোড হবে)
+    // ১. ইনিশিয়াল ফাংশন
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
-            renderGrid(allChannels); 
+            renderGrid(allChannels);
         }
-        fetchChannels(); // ব্যাকগ্রাউন্ডে ফ্রেশ ডেটা আনবে
+        await fetchChannels(); // ব্যাকগ্রাউন্ডে ফ্রেশ ডাটা আনা
     }
 
-    // ২. ডেটা ফেচিং লজিক
+    // ২. চ্যানেল লোড করার ফাংশন (টাইমস্ট্যাম্পসহ যাতে দ্রুত ফ্রেশ ডাটা আসে)
     async function fetchChannels() {
         try {
-            const res = await fetch(proxyUrl + '&t=' + Date.now());
+            const freshUrl = m3uUrl + '&t=' + new Date().getTime();
+            const res = await fetch(freshUrl);
             const data = await res.text();
             
             const lines = data.split('\n');
@@ -119,7 +125,8 @@
             lines.forEach(line => {
                 line = line.trim();
                 if (line.includes('#EXTINF:')) {
-                    name = (line.split(',').pop()).trim();
+                    const nameParts = line.split(',');
+                    name = nameParts[nameParts.length - 1].trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
                     newChannels.push({ name: name || "Channel", url: line, logo });
@@ -127,31 +134,59 @@
             });
 
             if (newChannels.length > 0) {
-                // শুধু ডেটা পরিবর্তন হলেই রি-রেন্ডার হবে
-                if (JSON.stringify(allChannels) !== JSON.stringify(newChannels)) {
-                    allChannels = newChannels;
-                    localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                    if(!document.getElementById('search-input').value) {
-                        renderGrid(allChannels);
-                    }
+                allChannels = newChannels;
+                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
+                
+                // সার্চ বক্স খালি থাকলে তবেই অটো আপডেট হবে
+                if(!document.getElementById('search-input').value) {
+                    renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.error("Fetch Error:", e); }
+        } catch(e) { console.error("Error fetching channels:", e); }
     }
 
-    // ৩. রিফ্রেশ বাটন (স্মুথ ইউআই)
+    // ৩. রিফ্রেশ বাটন ফাংশন (সাথে সাথে ক্লিয়ার হবে)
     async function forceRefresh() {
-        const btn = document.querySelector('.refresh-btn');
-        btn.innerHTML = "⏳ লোডিং...";
+        const grid = document.getElementById('channel-grid');
+        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">চ্যানেল আপডেট হচ্ছে... দয়া করে অপেক্ষা করুন।</h2>';
+        
+        localStorage.removeItem('zeno_cache');
+        allChannels = [];
+        document.getElementById('search-input').value = ""; // সার্চ ক্লিয়ার করা
+        
         await fetchChannels();
-        btn.innerHTML = "🔄 রিফ্রেশ";
     }
 
-    // ৪. চ্যানেল গ্রিড রেন্ডার (Lazy Loading যুক্ত)
+    // ৪. সার্চ লজিক (টাইপ করার সাথে সাথে গ্রিড আপডেট)
+    document.getElementById('search-input').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
+        renderGrid(filtered);
+    });
+
+    function goFullscreen() {
+        if (player.isFullscreen()) { player.exitFullscreen(); } 
+        else { player.requestFullscreen(); }
+    }
+
+    function playChannel(ch, cardElement) {
+        player.src({ src: ch.url, type: 'application/x-mpegURL' });
+        player.play().catch(()=>{});
+        if(cardElement) {
+            lastFocusedCard = cardElement;
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
         
+        if(list.length === 0) {
+            grid.innerHTML = '<p style="text-align:center; width:100%;">দুঃখিত, কোনো চ্যানেল পাওয়া যায়নি।</p>';
+            return;
+        }
+
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -161,58 +196,56 @@
             
             card.innerHTML = `
                 <div class="ch-index">${originalIdx}</div>
-                <div class="logo-box">
-                    <img src="${ch.logo}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=TV'">
-                </div>
+                <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
 
-            card.onclick = () => playChannel(ch, card);
+            let lastClick = 0;
+            card.addEventListener('click', () => {
+                let currentTime = new Date().getTime();
+                if (currentTime - lastClick < 400) { 
+                    playChannel(ch, card);
+                    setTimeout(goFullscreen, 400); 
+                } else {
+                    playChannel(ch, card);
+                }
+                lastClick = currentTime;
+            });
+
+            card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
     }
 
-    function playChannel(ch, cardElement) {
-        player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play().catch(()=>{});
-        if(cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+    function showCategory(type) {
+        document.getElementById('search-input').value = "";
+        renderGrid(allChannels);
     }
 
-    function goFullscreen() {
-        if (player.isFullscreen()) { player.exitFullscreen(); } 
-        else { player.requestFullscreen(); }
-    }
-
-    // সার্চ লজিক
-    document.getElementById('search-input').addEventListener('input', function(e) {
-        const term = e.target.value.toLowerCase().trim();
-        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
-        renderGrid(filtered);
-    });
-
-    // রিমোট/কীবোর্ড নম্বর লজিক
+    // নম্বর লজিক (Remote Control/Keyboard)
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
+        // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক কাজ করবে না
         if (document.activeElement.id === 'search-input') return;
+
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
             osd.innerText = "CH: " + numBuffer; 
             osd.style.display = 'block';
+            
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) targetCard.focus();
-                    playChannel(chData, targetCard);
+                    if(targetCard) { targetCard.focus(); playChannel(chData, targetCard); }
+                    else { playChannel(chData, null); }
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1500); 
+            }, 2000); 
         }
     });
 
