@@ -9,7 +9,7 @@
     
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; }
 
         /* প্লেয়ার সেকশন */
         #player-wrapper { 
@@ -36,15 +36,16 @@
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
+        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
             box-shadow: 0 0 20px var(--accent); z-index: 10; outline: none;
         }
 
-        /* চ্যানেল গ্রিড ও স্ক্রল এলাকা */
+        /* চ্যানেল গ্রিড */
         #scroll-content { 
             flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; 
-            touch-action: pan-y; /* Pull to Refresh এর জন্য জরুরি */
+            -webkit-overflow-scrolling: touch; 
         }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
@@ -54,30 +55,31 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* Pull to Refresh ইন্ডিকেটর */
-        #ptr-indicator {
-            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-            background: var(--blue); color: white; padding: 8px 15px; border-radius: 20px;
-            font-size: 14px; display: none; z-index: 3000; font-weight: bold;
-        }
-
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
             border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
+        }
+
+        /* Pull to Refresh ইন্ডিকেটর */
+        #ptr-box {
+            width: 100%; height: 0; overflow: hidden; background: #111; 
+            display: flex; align-items: center; justify-content: center;
+            color: var(--blue); font-weight: bold; transition: height 0.2s ease;
         }
     </style>
 </head>
 <body>
 
 <div id="osd-number">CH: --</div>
-<div id="ptr-indicator">টেনে ধরে রিফ্রেশ করুন...</div>
 
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
 </div>
 
 <div id="ui-overlay">
+    <div id="ptr-box">ছেড়ে দিন রিফ্রেশ করতে...</div>
     <div class="tabs-container">
         <button class="tab" tabindex="0">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
@@ -97,7 +99,6 @@
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
     let allChannels = [];
 
-    // ১. মূল ফাংশন
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
@@ -105,7 +106,7 @@
             renderGrid(allChannels);
         }
         await fetchChannels();
-        setInterval(fetchChannels, 20000); // ২০ সেকেন্ড পর পর অটো আপডেট
+        setInterval(fetchChannels, 20000); // ২০ সেকেন্ড অন্তর অটো আপডেট
     }
 
     async function fetchChannels() {
@@ -141,7 +142,7 @@
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.error("Fetch error:", e); }
+        } catch(e) { console.log("Fetch Error"); }
     }
 
     function renderGrid(list) {
@@ -178,37 +179,38 @@
         else player.requestFullscreen();
     }
 
-    // ২. Pull to Refresh লজিক (মোবাইলের জন্য)
-    let startY = 0;
-    const scrollContent = document.getElementById('scroll-content');
-    const ptrIndicator = document.getElementById('ptr-indicator');
+    // --- Pull to Refresh logic (সংশোধিত) ---
+    const scroller = document.getElementById('scroll-content');
+    const ptrBox = document.getElementById('ptr-box');
+    let touchStart = 0;
 
-    scrollContent.addEventListener('touchstart', (e) => {
-        if (scrollContent.scrollTop === 0) {
-            startY = e.touches[0].pageY;
+    scroller.addEventListener('touchstart', (e) => {
+        touchStart = e.touches[0].pageY;
+    }, {passive: true});
+
+    scroller.addEventListener('touchmove', (e) => {
+        const touchCurrent = e.touches[0].pageY;
+        const diff = touchCurrent - touchStart;
+        
+        if (scroller.scrollTop <= 0 && diff > 0) {
+            ptrBox.style.height = Math.min(diff / 2, 60) + 'px';
         }
     }, {passive: true});
 
-    scrollContent.addEventListener('touchmove', (e) => {
-        const y = e.touches[0].pageY;
-        if (scrollContent.scrollTop === 0 && y > startY + 50) {
-            ptrIndicator.style.display = 'block';
-            ptrIndicator.innerText = "ছেড়ে দিন আপডেট করতে...";
-        }
-    }, {passive: true});
-
-    scrollContent.addEventListener('touchend', async (e) => {
-        const y = e.changedTouches[0].pageY;
-        if (scrollContent.scrollTop === 0 && y > startY + 100) {
-            ptrIndicator.innerText = "আপডেট হচ্ছে...";
+    scroller.addEventListener('touchend', async (e) => {
+        if (parseInt(ptrBox.style.height) >= 50) {
+            ptrBox.innerText = "🔄 আপডেট হচ্ছে...";
             await fetchChannels();
-            setTimeout(() => ptrIndicator.style.display = 'none', 1000);
+            setTimeout(() => { 
+                ptrBox.style.height = '0px'; 
+                ptrBox.innerText = "ছেড়ে দিন রিফ্রেশ করতে..."; 
+            }, 500);
         } else {
-            ptrIndicator.style.display = 'none';
+            ptrBox.style.height = '0px';
         }
     });
 
-    // ৩. রিমোট কন্ট্রোল নম্বর লজিক
+    // --- রিমোট নম্বর কন্ট্রোল ---
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
