@@ -11,17 +11,14 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        /* ক্যাটাগরি বার ও সার্চ বক্স */
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
             padding: 15px 20px; background: #0a0a0a; z-index: 3500;
@@ -45,11 +42,9 @@
         .apk-btn { background: #28a745; color: white; }
 
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .apk-btn:focus, #search-input:focus { 
-            border-color: #fff !important; transform: scale(1.02); 
-            z-index: 10; outline: none;
+            border-color: #fff !important; transform: scale(1.02); outline: none; box-shadow: 0 0 10px var(--blue);
         }
 
-        /* চ্যানেল গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
@@ -59,7 +54,6 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -81,7 +75,6 @@
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0" onclick="downloadAPK()">📥 APK</button>
-        
         <input type="text" id="search-input" placeholder="🔍 ক্লিক করে সার্চ করুন..." tabindex="0" readonly>
     </div>
 
@@ -99,7 +92,6 @@
     const apkDownloadUrl = 'https://www.mediafire.com/file/yvksk56pmlwx9m9/Zeno_Tv.apk/file';
 
     let allChannels = [];
-    let lastFocusedCard = null;
 
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
@@ -138,30 +130,27 @@
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.error("Error fetching channels:", e); }
+        } catch(e) { console.error("Error:", e); }
+    }
+
+    // রিফ্রেশ ফাংশন - এখন প্রপারলি কাজ করবে
+    async function forceRefresh() {
+        const grid = document.getElementById('channel-grid');
+        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">আপডেট হচ্ছে...</h2>';
+        localStorage.removeItem('zeno_cache');
+        document.getElementById('search-input').value = ""; 
+        await fetchChannels();
     }
 
     function downloadAPK() {
         window.open(apkDownloadUrl, '_blank');
     }
 
+    // সার্চ বক্স লজিক
     const searchInput = document.getElementById('search-input');
-    searchInput.addEventListener('click', function() {
-        this.readOnly = false;
-        this.focus();
-    });
-
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            this.readOnly = false;
-            this.focus();
-        }
-    });
-
-    searchInput.addEventListener('blur', function() {
-        this.readOnly = true;
-    });
-
+    searchInput.addEventListener('click', function() { this.readOnly = false; this.focus(); });
+    searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { this.readOnly = false; this.focus(); } });
+    searchInput.addEventListener('blur', function() { this.readOnly = true; });
     searchInput.addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
@@ -169,18 +158,14 @@
     });
 
     function goFullscreen() {
-        if (player.isFullscreen()) { 
-            player.exitFullscreen(); 
-        } else { 
-            player.requestFullscreen(); 
-        }
+        if (player.isFullscreen()) { player.exitFullscreen(); } 
+        else { player.requestFullscreen(); }
     }
 
     function playChannel(ch, cardElement) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
         if(cardElement) {
-            lastFocusedCard = cardElement;
             cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             cardElement.focus();
         }
@@ -189,37 +174,21 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
             card.tabIndex = 0;
             const originalIdx = index + 1;
             card.setAttribute('data-index', originalIdx);
-            
-            card.innerHTML = `
-                <div class="ch-index">${originalIdx}</div>
-                <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
-                <div class="name">${ch.name}</div>
-            `;
+            card.innerHTML = `<div class="ch-index">${originalIdx}</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div><div class="name">${ch.name}</div>`;
 
-            // --- ডাবল ক্লিক লজিক ---
             let lastClick = 0;
             card.addEventListener('click', () => {
                 let currentTime = new Date().getTime();
-                let timeDiff = currentTime - lastClick;
-
-                if (timeDiff < 400 && timeDiff > 0) {
-                    // ডাবল ক্লিক হলে ফুলস্ক্রিন
-                    goFullscreen();
-                } else {
-                    // সিঙ্গেল ক্লিক হলে শুধু প্লে
-                    playChannel(ch, card);
-                }
+                if (currentTime - lastClick < 400) { goFullscreen(); } 
+                else { playChannel(ch, card); }
                 lastClick = currentTime;
             });
-
-            card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
     }
@@ -229,10 +198,13 @@
         renderGrid(allChannels);
     }
 
+    // --- গ্লোবাল নম্বর ও কি-বোর্ড লজিক ---
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        if (document.activeElement.id === 'search-input' && !document.activeElement.readOnly) return;
+        // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক বন্ধ থাকবে
+        if (document.activeElement === searchInput && !searchInput.readOnly) return;
 
+        // নম্বর টিপলে যেকোনো জায়গা থেকে কাজ করবে
         if (e.key >= '0' && e.key <= '9') {
             numBuffer += e.key;
             const osd = document.getElementById('osd-number');
@@ -243,15 +215,13 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
-                
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                     playChannel(chData, targetCard);
                 }
-                
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1800);
+            }, 1500); 
         }
     });
 
