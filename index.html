@@ -19,7 +19,7 @@
         .video-js { width: 100% !important; height: 100% !important; }
         
         /* UI লেআউট */
-        #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
+        #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); position: relative; }
         
         /* ক্যাটাগরি বার */
         .tabs-container { 
@@ -36,14 +36,16 @@
 
         .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
 
-        /* ফোকাস স্টাইল */
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus { 
             background: var(--accent) !important; border-color: #fff !important; transform: scale(1.05); 
             box-shadow: 0 0 20px var(--accent); z-index: 10; outline: none;
         }
 
-        /* চ্যানেল গ্রিড */
-        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
+        /* চ্যানেল গ্রিড ও স্ক্রল এলাকা */
+        #scroll-content { 
+            flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; 
+            touch-action: pan-y; /* Pull to Refresh এর জন্য জরুরি */
+        }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; }
@@ -52,7 +54,13 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর */
+        /* Pull to Refresh ইন্ডিকেটর */
+        #ptr-indicator {
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            background: var(--blue); color: white; padding: 8px 15px; border-radius: 20px;
+            font-size: 14px; display: none; z-index: 3000; font-weight: bold;
+        }
+
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -63,6 +71,7 @@
 <body>
 
 <div id="osd-number">CH: --</div>
+<div id="ptr-indicator">টেনে ধরে রিফ্রেশ করুন...</div>
 
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
@@ -88,26 +97,21 @@
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
     let allChannels = [];
 
-    // ১. ইনিশিয়াল ফাংশন - ক্যাশ থেকে সাথে সাথে লোড করবে
+    // ১. মূল ফাংশন
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
-        
-        // ব্যাকগ্রাউন্ডে সার্ভার থেকে ডাটা আপডেট করবে
         await fetchChannels();
-        
-        // প্রতি ২০ সেকেন্ড পর পর নিজে নিজে আপডেট খুঁজবে (অটো আপডেট)
-        setInterval(fetchChannels, 20000);
+        setInterval(fetchChannels, 20000); // ২০ সেকেন্ড পর পর অটো আপডেট
     }
 
     async function fetchChannels() {
         try {
             const token = Date.now();
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}&v=${token}`;
-            
             const res = await fetch(proxyUrl);
             const data = await res.text();
             
@@ -131,17 +135,13 @@
             if (newChannels.length > 0) {
                 const oldHash = JSON.stringify(allChannels);
                 const newHash = JSON.stringify(newChannels);
-
-                // যদি প্লেলিস্টে পরিবর্তন থাকে তবেই গ্রিড আপডেট হবে
                 if (oldHash !== newHash) {
                     allChannels = newChannels;
                     localStorage.setItem('zeno_cache', newHash);
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { 
-            console.error("Fetch error:", e);
-        }
+        } catch(e) { console.error("Fetch error:", e); }
     }
 
     function renderGrid(list) {
@@ -152,44 +152,25 @@
             card.className = 'card';
             card.tabIndex = 0;
             card.setAttribute('data-index', index + 1);
-            
             card.innerHTML = `
                 <div class="ch-index">${index + 1}</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-
-            let lastClick = 0;
-            card.addEventListener('click', () => {
-                let currentTime = new Date().getTime();
-                if (currentTime - lastClick < 400) { 
-                    playChannel(ch, card);
-                    setTimeout(goFullscreen, 400); 
-                } else {
-                    playChannel(ch, card);
-                }
-                lastClick = currentTime;
-            });
-
+            card.onclick = () => playChannel(ch, card);
             grid.appendChild(card);
         });
     }
 
-    function playChannel(ch, cardElement) {
+    function playChannel(ch, card) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
-        if(cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function forceRefresh() {
-        const btn = document.querySelector('.refresh-btn');
-        btn.innerText = "⏳...";
         localStorage.removeItem('zeno_cache');
-        fetchChannels().finally(() => {
-            setTimeout(() => btn.innerText = "🔄 রিফ্রেশ", 1000);
-        });
+        fetchChannels();
     }
 
     function goFullscreen() {
@@ -197,7 +178,37 @@
         else player.requestFullscreen();
     }
 
-    // নম্বর লজিক (Remote Control & OSD)
+    // ২. Pull to Refresh লজিক (মোবাইলের জন্য)
+    let startY = 0;
+    const scrollContent = document.getElementById('scroll-content');
+    const ptrIndicator = document.getElementById('ptr-indicator');
+
+    scrollContent.addEventListener('touchstart', (e) => {
+        if (scrollContent.scrollTop === 0) {
+            startY = e.touches[0].pageY;
+        }
+    }, {passive: true});
+
+    scrollContent.addEventListener('touchmove', (e) => {
+        const y = e.touches[0].pageY;
+        if (scrollContent.scrollTop === 0 && y > startY + 50) {
+            ptrIndicator.style.display = 'block';
+            ptrIndicator.innerText = "ছেড়ে দিন আপডেট করতে...";
+        }
+    }, {passive: true});
+
+    scrollContent.addEventListener('touchend', async (e) => {
+        const y = e.changedTouches[0].pageY;
+        if (scrollContent.scrollTop === 0 && y > startY + 100) {
+            ptrIndicator.innerText = "আপডেট হচ্ছে...";
+            await fetchChannels();
+            setTimeout(() => ptrIndicator.style.display = 'none', 1000);
+        } else {
+            ptrIndicator.style.display = 'none';
+        }
+    });
+
+    // ৩. রিমোট কন্ট্রোল নম্বর লজিক
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
@@ -205,21 +216,16 @@
             const osd = document.getElementById('osd-number');
             osd.innerText = "CH: " + numBuffer; 
             osd.style.display = 'block';
-            
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
-                
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) {
-                        targetCard.focus();
-                        playChannel(chData, targetCard);
-                    }
+                    if(targetCard) targetCard.focus();
+                    playChannel(chData, targetCard);
                 }
-                numBuffer = ""; 
-                osd.style.display = 'none';
+                numBuffer = ""; osd.style.display = 'none';
             }, 2000); 
         }
     });
