@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Turbo Edition</title>
+    <title>Zeno TV - Turbo Edition (Auto-Update)</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -46,7 +46,7 @@
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; }
+        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; transition: 0.3s; }
         .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
@@ -70,7 +70,7 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
+        <button class="tab" tabindex="0">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
         <button class="apk-btn" tabindex="0">📥 APK</button>
@@ -86,29 +86,38 @@
 <script>
     const player = videojs('tv-player');
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
-    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
-
     let allChannels = [];
-    let lastFocusedCard = null;
 
-    // ১. ইনিশিয়াল ফাংশন: প্রথমে ক্যাশ চেক করবে, তারপর নেট থেকে আপডেট আনবে
+    // ১. ইনিশিয়াল ফাংশন
     async function init() {
+        // শুরুতে পুরনো ক্যাশ থাকলে তা দেখাবে দ্রুত লোড হওয়ার জন্য
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
-            console.log("Loaded from cache");
         }
         
-        // ব্যাকগ্রাউন্ডে নেট থেকে ডাটা আনা হচ্ছে
+        // তারপর সার্ভার থেকে লেটেস্ট ডাটা নিয়ে আসবে
         await fetchChannels();
+
+        // প্রতি ১০ সেকেন্ড পর পর অটো চেক করবে নতুন চ্যানেল যোগ হয়েছে কি না
+        setInterval(fetchChannels, 10000);
     }
 
-    async function fetchChannels() {
+    // ২. চ্যানেল ডাটা ফেচ ফাংশন (Anti-Cache Logic)
+    async function fetchChannels(isManual = false) {
         try {
-            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
+            // ক্যাশ বাইপাস করতে র্যান্ডম টোকেন ব্যবহার
+            const antiCacheToken = Math.random().toString(36).substring(7);
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}&v=${antiCacheToken}`;
+            
+            const res = await fetch(proxyUrl, {
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+            });
             const data = await res.text();
             
+            if (!data || data.length < 10) return;
+
             const lines = data.split('\n');
             let name = "", logo = "";
             let newChannels = [];
@@ -124,38 +133,25 @@
                 }
             });
 
+            // ডাটাতে পরিবর্তন থাকলেই কেবল আপডেট করবে
             if (newChannels.length > 0) {
-                allChannels = newChannels;
-                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                renderGrid(allChannels); // গ্রিড আপডেট
+                const oldHash = JSON.stringify(allChannels);
+                const newHash = JSON.stringify(newChannels);
+
+                if (oldHash !== newHash) {
+                    allChannels = newChannels;
+                    localStorage.setItem('zeno_cache', newHash);
+                    renderGrid(allChannels);
+                    console.log("List Updated!");
+                }
             }
+            if(isManual) console.log("Manual Refresh Done.");
         } catch(e) { 
             console.error("Fetch error:", e);
         }
     }
 
-    function forceRefresh() {
-        localStorage.removeItem('zeno_cache');
-        location.reload();
-    }
-
-    function goFullscreen() {
-        if (player.isFullscreen()) {
-            player.exitFullscreen();
-        } else {
-            player.requestFullscreen();
-        }
-    }
-
-    function playChannel(ch, cardElement) {
-        player.src({ src: ch.url, type: 'application/x-mpegURL' });
-        player.play().catch(()=>{});
-        if(cardElement) {
-            lastFocusedCard = cardElement;
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
+    // ৩. গ্রিড রেন্ডার ফাংশন
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
@@ -173,7 +169,7 @@
             `;
 
             let lastClick = 0;
-            card.addEventListener('click', (e) => {
+            card.addEventListener('click', () => {
                 let currentTime = new Date().getTime();
                 if (currentTime - lastClick < 400) { 
                     playChannel(ch, card);
@@ -184,16 +180,33 @@
                 lastClick = currentTime;
             });
 
-            card.addEventListener('focus', () => { lastFocusedCard = card; });
             grid.appendChild(card);
         });
     }
 
-    function showCategory(type) {
-        renderGrid(allChannels);
+    // ৪. প্লেয়ার এবং অন্যান্য কন্ট্রোল
+    function playChannel(ch, cardElement) {
+        player.src({ src: ch.url, type: 'application/x-mpegURL' });
+        player.play().catch(()=>{});
+        if(cardElement) {
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
-    // নম্বর লজিক (Remote Control & OSD)
+    function forceRefresh() {
+        const btn = document.querySelector('.refresh-btn');
+        btn.innerText = "⏳...";
+        fetchChannels(true).then(() => {
+            setTimeout(() => btn.innerText = "🔄 রিফ্রেশ", 1000);
+        });
+    }
+
+    function goFullscreen() {
+        if (player.isFullscreen()) player.exitFullscreen();
+        else player.requestFullscreen();
+    }
+
+    // ৫. রিমোট কন্ট্রোল নম্বর লজিক
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
@@ -206,19 +219,14 @@
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
-                
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) {
-                        targetCard.focus();
-                        playChannel(chData, targetCard);
-                    } else {
-                        playChannel(chData, null);
-                    }
+                    if(targetCard) targetCard.focus();
+                    playChannel(chData, targetCard);
                 }
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 2500); 
+            }, 2000); 
         }
     });
 
