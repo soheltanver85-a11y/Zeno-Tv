@@ -11,14 +11,17 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
+        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
+        /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
+        /* ক্যাটাগরি বার ও সার্চ বক্স */
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
             padding: 15px 20px; background: #0a0a0a; z-index: 3500;
@@ -45,6 +48,7 @@
             border-color: #fff !important; transform: scale(1.02); outline: none; box-shadow: 0 0 10px var(--blue);
         }
 
+        /* গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
@@ -54,6 +58,7 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -133,7 +138,6 @@
         } catch(e) { console.error("Error:", e); }
     }
 
-    // রিফ্রেশ ফাংশন - এখন প্রপারলি কাজ করবে
     async function forceRefresh() {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">আপডেট হচ্ছে...</h2>';
@@ -146,7 +150,7 @@
         window.open(apkDownloadUrl, '_blank');
     }
 
-    // সার্চ বক্স লজিক
+    // সার্চ লজিক
     const searchInput = document.getElementById('search-input');
     searchInput.addEventListener('click', function() { this.readOnly = false; this.focus(); });
     searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { this.readOnly = false; this.focus(); } });
@@ -198,30 +202,45 @@
         renderGrid(allChannels);
     }
 
-    // --- গ্লোবাল নম্বর ও কি-বোর্ড লজিক ---
+    // --- গ্লোবাল নম্বর এবং কি-বোর্ড লজিক (প্লেয়ারের ভেতরে থাকলেও কাজ করবে) ---
     let numBuffer = "", numTimeout = null;
-    window.addEventListener('keydown', (e) => {
+
+    function handleNumberKey(key) {
         // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক বন্ধ থাকবে
         if (document.activeElement === searchInput && !searchInput.readOnly) return;
 
-        // নম্বর টিপলে যেকোনো জায়গা থেকে কাজ করবে
+        numBuffer += key;
+        const osd = document.getElementById('osd-number');
+        osd.innerText = "CH: " + numBuffer; 
+        osd.style.display = 'block';
+        
+        clearTimeout(numTimeout);
+        numTimeout = setTimeout(() => {
+            const targetIdx = parseInt(numBuffer);
+            const chData = allChannels[targetIdx - 1];
+            if (chData) {
+                const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
+                // ফুলস্ক্রিন থেকে বের হয়ে চ্যানেল প্লে করা ভালো দেখায়
+                if (player.isFullscreen()) { player.exitFullscreen(); }
+                playChannel(chData, targetCard);
+            }
+            numBuffer = ""; 
+            osd.style.display = 'none';
+        }, 1500); 
+    }
+
+    // উইন্ডো লেভেলে লিসেনার (পুরো পেজের যেকোনো জায়গায় কাজ করবে)
+    window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
-            numBuffer += e.key;
-            const osd = document.getElementById('osd-number');
-            osd.innerText = "CH: " + numBuffer; 
-            osd.style.display = 'block';
-            
-            clearTimeout(numTimeout);
-            numTimeout = setTimeout(() => {
-                const targetIdx = parseInt(numBuffer);
-                const chData = allChannels[targetIdx - 1];
-                if (chData) {
-                    const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    playChannel(chData, targetCard);
-                }
-                numBuffer = ""; 
-                osd.style.display = 'none';
-            }, 1500); 
+            handleNumberKey(e.key);
+        }
+    }, true); // Use capture phase to override videojs default behaviors
+
+    // ভিডিওজেএস প্লেয়ারের জন্য আলাদাভাবে নম্বর হ্যান্ডলিং
+    player.on('keydown', (e) => {
+        if (e.which >= 48 && e.which <= 57) { // 0-9
+            const key = String.fromCharCode(e.which);
+            handleNumberKey(key);
         }
     });
 
