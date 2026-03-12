@@ -9,7 +9,7 @@
     
     <style>
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
         #player-wrapper { 
@@ -19,7 +19,7 @@
         .video-js { width: 100% !important; height: 100% !important; }
         
         /* UI লেআউট */
-        #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
         /* ক্যাটাগরি বার */
         .tabs-container { 
@@ -43,10 +43,7 @@
         }
 
         /* চ্যানেল গ্রিড */
-        #scroll-content { 
-            flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; 
-            -webkit-overflow-scrolling: touch; 
-        }
+        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; }
@@ -61,13 +58,6 @@
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
             border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
         }
-
-        /* Pull to Refresh ইন্ডিকেটর */
-        #ptr-box {
-            width: 100%; height: 0; overflow: hidden; background: #111; 
-            display: flex; align-items: center; justify-content: center;
-            color: var(--blue); font-weight: bold; transition: height 0.2s ease;
-        }
     </style>
 </head>
 <body>
@@ -79,7 +69,6 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="ptr-box">ছেড়ে দিন রিফ্রেশ করতে...</div>
     <div class="tabs-container">
         <button class="tab" tabindex="0">সব চ্যানেল</button>
         <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
@@ -99,20 +88,26 @@
     const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
     let allChannels = [];
 
+    // ১. ইনিশিয়াল ফাংশন - ক্যাশ থেকে সাথে সাথে লোড করবে
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
+        
+        // ব্যাকগ্রাউন্ডে সার্ভার থেকে ডাটা আপডেট করবে
         await fetchChannels();
-        setInterval(fetchChannels, 20000); // ২০ সেকেন্ড অন্তর অটো আপডেট
+        
+        // প্রতি ২০ সেকেন্ড পর পর নিজে নিজে আপডেট খুঁজবে (অটো আপডেট)
+        setInterval(fetchChannels, 20000);
     }
 
     async function fetchChannels() {
         try {
             const token = Date.now();
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}&v=${token}`;
+            
             const res = await fetch(proxyUrl);
             const data = await res.text();
             
@@ -136,13 +131,17 @@
             if (newChannels.length > 0) {
                 const oldHash = JSON.stringify(allChannels);
                 const newHash = JSON.stringify(newChannels);
+
+                // যদি প্লেলিস্টে পরিবর্তন থাকে তবেই গ্রিড আপডেট হবে
                 if (oldHash !== newHash) {
                     allChannels = newChannels;
                     localStorage.setItem('zeno_cache', newHash);
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.log("Fetch Error"); }
+        } catch(e) { 
+            console.error("Fetch error:", e);
+        }
     }
 
     function renderGrid(list) {
@@ -153,25 +152,44 @@
             card.className = 'card';
             card.tabIndex = 0;
             card.setAttribute('data-index', index + 1);
+            
             card.innerHTML = `
                 <div class="ch-index">${index + 1}</div>
                 <div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                 <div class="name">${ch.name}</div>
             `;
-            card.onclick = () => playChannel(ch, card);
+
+            let lastClick = 0;
+            card.addEventListener('click', () => {
+                let currentTime = new Date().getTime();
+                if (currentTime - lastClick < 400) { 
+                    playChannel(ch, card);
+                    setTimeout(goFullscreen, 400); 
+                } else {
+                    playChannel(ch, card);
+                }
+                lastClick = currentTime;
+            });
+
             grid.appendChild(card);
         });
     }
 
-    function playChannel(ch, card) {
+    function playChannel(ch, cardElement) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
-        if(card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if(cardElement) {
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     function forceRefresh() {
+        const btn = document.querySelector('.refresh-btn');
+        btn.innerText = "⏳...";
         localStorage.removeItem('zeno_cache');
-        fetchChannels();
+        fetchChannels().finally(() => {
+            setTimeout(() => btn.innerText = "🔄 রিফ্রেশ", 1000);
+        });
     }
 
     function goFullscreen() {
@@ -179,38 +197,7 @@
         else player.requestFullscreen();
     }
 
-    // --- Pull to Refresh logic (সংশোধিত) ---
-    const scroller = document.getElementById('scroll-content');
-    const ptrBox = document.getElementById('ptr-box');
-    let touchStart = 0;
-
-    scroller.addEventListener('touchstart', (e) => {
-        touchStart = e.touches[0].pageY;
-    }, {passive: true});
-
-    scroller.addEventListener('touchmove', (e) => {
-        const touchCurrent = e.touches[0].pageY;
-        const diff = touchCurrent - touchStart;
-        
-        if (scroller.scrollTop <= 0 && diff > 0) {
-            ptrBox.style.height = Math.min(diff / 2, 60) + 'px';
-        }
-    }, {passive: true});
-
-    scroller.addEventListener('touchend', async (e) => {
-        if (parseInt(ptrBox.style.height) >= 50) {
-            ptrBox.innerText = "🔄 আপডেট হচ্ছে...";
-            await fetchChannels();
-            setTimeout(() => { 
-                ptrBox.style.height = '0px'; 
-                ptrBox.innerText = "ছেড়ে দিন রিফ্রেশ করতে..."; 
-            }, 500);
-        } else {
-            ptrBox.style.height = '0px';
-        }
-    });
-
-    // --- রিমোট নম্বর কন্ট্রোল ---
+    // নম্বর লজিক (Remote Control & OSD)
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
@@ -218,16 +205,21 @@
             const osd = document.getElementById('osd-number');
             osd.innerText = "CH: " + numBuffer; 
             osd.style.display = 'block';
+            
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
                 const chData = allChannels[targetIdx - 1];
+                
                 if (chData) {
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                    if(targetCard) targetCard.focus();
-                    playChannel(chData, targetCard);
+                    if(targetCard) {
+                        targetCard.focus();
+                        playChannel(chData, targetCard);
+                    }
                 }
-                numBuffer = ""; osd.style.display = 'none';
+                numBuffer = ""; 
+                osd.style.display = 'none';
             }, 2000); 
         }
     });
