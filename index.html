@@ -59,7 +59,7 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর (টিভি স্ক্রিনে যা দেখাবে) */
+        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -169,8 +169,11 @@
     });
 
     function goFullscreen() {
-        if (player.isFullscreen()) { player.exitFullscreen(); } 
-        else { player.requestFullscreen(); }
+        if (player.isFullscreen()) { 
+            player.exitFullscreen(); 
+        } else { 
+            player.requestFullscreen(); 
+        }
     }
 
     function playChannel(ch, cardElement) {
@@ -179,7 +182,7 @@
         if(cardElement) {
             lastFocusedCard = cardElement;
             cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            cardElement.focus(); // চ্যানেল প্লে হওয়ার সাথে ফোকাসও সেখানে যাবে
+            cardElement.focus();
         }
     }
 
@@ -200,8 +203,20 @@
                 <div class="name">${ch.name}</div>
             `;
 
+            // --- ডাবল ক্লিক লজিক ---
+            let lastClick = 0;
             card.addEventListener('click', () => {
-                playChannel(ch, card);
+                let currentTime = new Date().getTime();
+                let timeDiff = currentTime - lastClick;
+
+                if (timeDiff < 400 && timeDiff > 0) {
+                    // ডাবল ক্লিক হলে ফুলস্ক্রিন
+                    goFullscreen();
+                } else {
+                    // সিঙ্গেল ক্লিক হলে শুধু প্লে
+                    playChannel(ch, card);
+                }
+                lastClick = currentTime;
             });
 
             card.addEventListener('focus', () => { lastFocusedCard = card; });
@@ -214,10 +229,8 @@
         renderGrid(allChannels);
     }
 
-    // --- নম্বর টিপে চ্যানেল পরিবর্তনের লজিক (১ লিখলে ১ নম্বর চ্যানেল চলবে) ---
     let numBuffer = "", numTimeout = null;
     window.addEventListener('keydown', (e) => {
-        // যদি সার্চ বক্সে টাইপ করা অবস্থায় থাকে, তবে নম্বর লজিক কাজ করবে না
         if (document.activeElement.id === 'search-input' && !document.activeElement.readOnly) return;
 
         if (e.key >= '0' && e.key <= '9') {
@@ -229,17 +242,16 @@
             clearTimeout(numTimeout);
             numTimeout = setTimeout(() => {
                 const targetIdx = parseInt(numBuffer);
-                const chData = allChannels[targetIdx - 1]; // Array index ০ থেকে শুরু হয়
+                const chData = allChannels[targetIdx - 1];
                 
                 if (chData) {
-                    // গ্রিড থেকে ওই নম্বরের কার্ডটি খুঁজে বের করা
                     const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
                     playChannel(chData, targetCard);
                 }
                 
                 numBuffer = ""; 
                 osd.style.display = 'none';
-            }, 1800); // ১.৮ সেকেন্ড পর অটো প্লে হবে
+            }, 1800);
         }
     });
 
