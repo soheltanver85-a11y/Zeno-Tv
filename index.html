@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - Turbo Edition</title>
+    <title>Zeno TV - TV Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     
@@ -21,49 +21,47 @@
         /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        /* ক্যাটাগরি বার ও সার্চ বক্স */
+        /* কন্ট্রোল বার */
         .tabs-container { 
-            flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
-            padding: 15px 20px; background: #0a0a0a; z-index: 3500;
+            flex-shrink: 0; display: flex; align-items: center; gap: 15px; 
+            padding: 15px 25px; background: #0a0a0a; z-index: 3500;
             border-bottom: 3px solid var(--blue); overflow-x: auto;
         }
 
         .tab, .apk-btn, .refresh-btn, .custom-fs-btn { 
-            padding: 14px 26px; border-radius: 12px; cursor: pointer; background: #222; 
-            color: #fff; font-weight: bold; font-size: 16px; border: 2px solid transparent; outline: none;
+            padding: 16px 30px; border-radius: 12px; cursor: pointer; background: #222; 
+            color: #fff; font-weight: bold; font-size: 18px; border: 3px solid transparent; outline: none;
             white-space: nowrap; transition: 0.2s;
         }
 
         #search-input {
-            flex-grow: 1; min-width: 250px; padding: 14px 20px; border-radius: 12px; 
-            border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
-            outline: none; transition: 0.3s;
+            flex-grow: 1; min-width: 250px; padding: 16px 20px; border-radius: 12px; 
+            border: 3px solid #333; background: #111; color: #fff; font-size: 18px; 
+            outline: none;
         }
-        #search-input:focus { border-color: var(--blue); background: #1a1a1a; }
-
-        .custom-fs-btn { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; }
-        .apk-btn { background: #28a745; color: white; }
 
         .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .apk-btn:focus, #search-input:focus { 
-            border-color: #fff !important; transform: scale(1.02); outline: none; box-shadow: 0 0 10px var(--blue);
+            border-color: #fff !important; transform: scale(1.05); background: var(--blue); color: white;
         }
 
-        /* গ্রিড */
-        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        /* বড় লোগো গ্রিড (TV Optimized) */
+        #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 25px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
         
-        .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; transition: 0.3s; }
-        .card:hover { border-color: var(--blue); }
-        .logo-box { height: 90px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
+        .card { background: var(--card); border-radius: 18px; cursor: pointer; border: 3px solid #333; position: relative; overflow: hidden; transition: 0.2s; }
+        
+        /* লোগো বক্স বড় করা হয়েছে */
+        .logo-box { height: 110px; display: flex; align-items: center; justify-content: center; background: #fff; padding: 10px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .name { padding: 10px; font-size: 13px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 11px; font-weight: bold; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
+        
+        .name { padding: 15px; font-size: 16px; font-weight: bold; text-align: center; color: #fff; pointer-events: none; }
+        .ch-index { position: absolute; top: 10px; left: 10px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; border: 2px solid white; }
 
         /* OSD নম্বর */
         #osd-number { 
-            position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
-            color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
-            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
+            position: fixed; top: 50px; right: 50px; background: rgba(255, 0, 0, 0.95); 
+            color: white; font-size: 60px; font-weight: bold; padding: 20px 40px; 
+            border-radius: 20px; display: none; z-index: 99999; border: 4px solid white;
         }
     </style>
 </head>
@@ -78,10 +76,9 @@
 <div id="ui-overlay">
     <div class="tabs-container">
         <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
-        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
+        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 আপডেট</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        <button class="apk-btn" tabindex="0" onclick="downloadAPK()">📥 APK</button>
-        <input type="text" id="search-input" placeholder="🔍 সার্চ করুন..." tabindex="0">
+        <input type="text" id="search-input" placeholder="🔍 সার্চ..." tabindex="0">
     </div>
 
     <div id="scroll-content">
@@ -95,39 +92,30 @@
     const player = videojs('tv-player');
     const rawUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
-    const apkDownloadUrl = 'https://www.mediafire.com/file/yvksk56pmlwx9m9/Zeno_Tv.apk/file';
 
     let allChannels = [];
 
-    // ১. সাইটে ঢোকা মাত্রই কাজ শুরু করবে
+    // দ্রুত লোড করার জন্য ক্যাশ-ফার্স্ট ফাংশন
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
-        
-        // যদি আগে থেকে ডাটা সেভ থাকে, তবে দেরি না করে সাথে সাথে রেন্ডার করবে
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
-        
-        // ব্যাকগ্রাউন্ডে নতুন আপডেট চেক করবে, ইউজার টের পাবে না
         fetchChannels(); 
     }
 
     async function fetchChannels() {
         try {
-            const freshUrl = m3uUrl + '&t=' + new Date().getTime();
-            const res = await fetch(freshUrl);
+            const res = await fetch(m3uUrl + '&t=' + new Date().getTime());
             const data = await res.text();
-            
             const lines = data.split('\n');
-            let name = "", logo = "";
-            let newChannels = [];
+            let name = "", logo = "", newChannels = [];
 
             lines.forEach(line => {
                 line = line.trim();
                 if (line.includes('#EXTINF:')) {
-                    const nameParts = line.split(',');
-                    name = nameParts[nameParts.length - 1].trim();
+                    name = line.split(',').pop().trim();
                     logo = (line.match(/tvg-logo="([^"]+)"/) || [])[1] || "";
                 } else if (line.startsWith('http')) {
                     newChannels.push({ name: name || "Channel", url: line, logo });
@@ -136,21 +124,18 @@
 
             if (newChannels.length > 0) {
                 const oldData = localStorage.getItem('zeno_cache');
-                // যদি ডাটাতে কোনো পরিবর্তন আসে তবেই আপডেট করবে
                 if (JSON.stringify(newChannels) !== oldData) {
                     allChannels = newChannels;
                     localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
                     renderGrid(allChannels);
                 }
             }
-        } catch(e) { console.error("Error fetching channels:", e); }
+        } catch(e) { console.error(e); }
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = ''; 
-        
-        const fragment = document.createDocumentFragment(); // পারফরম্যান্সের জন্য ফ্র্যাগমেন্ট ব্যবহার
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -164,45 +149,32 @@
                 </div>
                 <div class="name">${ch.name}</div>`;
 
-            let lastClick = 0;
-            card.addEventListener('click', () => {
-                let currentTime = new Date().getTime();
-                if (currentTime - lastClick < 400) { goFullscreen(); } 
-                else { playChannel(ch, card); }
-                lastClick = currentTime;
-            });
-            fragment.appendChild(card);
+            card.addEventListener('click', () => playChannel(ch, card));
+            grid.appendChild(card);
         });
-        grid.appendChild(fragment);
-    }
-
-    async function forceRefresh() {
-        localStorage.removeItem('zeno_cache');
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">আপডেট হচ্ছে...</h2>';
-        await fetchChannels();
     }
 
     function playChannel(ch, cardElement) {
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
-        if(cardElement) {
-            cardElement.focus();
-        }
+        if(cardElement) cardElement.focus();
     }
 
-    // সার্চ বক্স অপ্টিমাইজেশন
+    async function forceRefresh() {
+        localStorage.removeItem('zeno_cache');
+        location.reload();
+    }
+
     document.getElementById('search-input').addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
         renderGrid(filtered);
     });
 
-    function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
     function goFullscreen() { player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen(); }
     function showCategory(type) { renderGrid(allChannels); }
 
-    // নম্বর সিস্টেম
+    // টিভি রিমোট নম্বর সিস্টেম
     let numBuffer = "", numTimeout = null;
     function handleNumberKey(key) {
         if (document.activeElement === document.getElementById('search-input')) return;
