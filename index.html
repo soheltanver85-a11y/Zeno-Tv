@@ -11,17 +11,14 @@
         :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
-        /* প্লেয়ার সেকশন */
         #player-wrapper { 
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* UI লেআউট */
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
-        /* ক্যাটাগরি বার ও সার্চ বক্স */
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 12px; 
             padding: 15px 20px; background: #0a0a0a; z-index: 3500;
@@ -48,7 +45,6 @@
             border-color: #fff !important; transform: scale(1.02); outline: none; box-shadow: 0 0 10px var(--blue);
         }
 
-        /* গ্রিড */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         
@@ -58,7 +54,6 @@
         .name { padding: 12px; font-size: 14px; font-weight: bold; text-align: center; color: #ccc; pointer-events: none; }
         .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* OSD নম্বর */
         #osd-number { 
             position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
             color: white; font-size: 55px; font-weight: bold; padding: 15px 35px; 
@@ -76,11 +71,11 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
-        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
-        <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        <button class="apk-btn" tabindex="0" onclick="downloadAPK()">📥 APK</button>
-        <input type="text" id="search-input" placeholder="🔍 ক্লিক করে সার্চ করুন..." tabindex="0" readonly>
+        <button class="tab" onclick="showCategory('all')">সব চ্যানেল</button>
+        <button class="refresh-btn" onclick="forceRefresh()">🔄 রিফ্রেশ</button>
+        <button class="custom-fs-btn" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
+        <button class="apk-btn" onclick="downloadAPK()">📥 APK</button>
+        <input type="text" id="search-input" placeholder="🔍 সার্চ করুন..." readonly>
     </div>
 
     <div id="scroll-content">
@@ -92,26 +87,25 @@
 
 <script>
     const player = videojs('tv-player');
-    // আপনার দেওয়া নতুন GitHub URL এখানে বসানো হয়েছে
-    const rawUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
-    const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
+    // সরাসরি GitHub লিঙ্ক ব্যবহার (প্রক্সি ছাড়া)
+    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
     const apkDownloadUrl = 'https://www.mediafire.com/file/yvksk56pmlwx9m9/Zeno_Tv.apk/file';
 
     let allChannels = [];
 
+    // পেজ লোড হওয়া মাত্রই ক্যাশ চেক করবে এবং রেন্ডার করবে
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
-            renderGrid(allChannels);
+            renderGrid(allChannels); // দ্রুত দেখানোর জন্য ক্যাশ থেকে লোড
         }
-        await fetchChannels(); 
+        await fetchChannels(); // ব্যাকগ্রাউন্ডে নতুন ডেটা আপডেট করবে
     }
 
     async function fetchChannels() {
         try {
-            const freshUrl = m3uUrl + '&t=' + new Date().getTime();
-            const res = await fetch(freshUrl);
+            const res = await fetch(m3uUrl);
             const data = await res.text();
             
             const lines = data.split('\n');
@@ -130,40 +124,47 @@
             });
 
             if (newChannels.length > 0) {
-                allChannels = newChannels;
-                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                if(!document.getElementById('search-input').value) {
-                    renderGrid(allChannels);
+                // যদি ক্যাশ ডেটার সাথে নতুন ডেটার পার্থক্য থাকে তবেই আপডেট করবে
+                if (JSON.stringify(allChannels) !== JSON.stringify(newChannels)) {
+                    allChannels = newChannels;
+                    localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
+                    if(!document.getElementById('search-input').value) {
+                        renderGrid(allChannels);
+                    }
                 }
             }
-        } catch(e) { console.error("Error:", e); }
+        } catch(e) { console.error("Fetch error:", e); }
+    }
+
+    function renderGrid(list) {
+        const grid = document.getElementById('channel-grid');
+        grid.innerHTML = '';
+        const fragment = document.createDocumentFragment(); // পারফরম্যান্সের জন্য ফ্র্যাগমেন্ট ব্যবহার
+
+        list.forEach((ch, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.tabIndex = 0;
+            const originalIdx = index + 1;
+            card.setAttribute('data-index', originalIdx);
+            card.innerHTML = `<div class="ch-index">${originalIdx}</div><div class="logo-box"><img src="${ch.logo}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div><div class="name">${ch.name}</div>`;
+
+            let lastClick = 0;
+            card.addEventListener('click', () => {
+                let currentTime = new Date().getTime();
+                if (currentTime - lastClick < 400) { goFullscreen(); } 
+                else { playChannel(ch, card); }
+                lastClick = currentTime;
+            });
+            fragment.appendChild(card);
+        });
+        grid.appendChild(fragment);
     }
 
     async function forceRefresh() {
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">আপডেট হচ্ছে...</h2>';
         localStorage.removeItem('zeno_cache');
-        document.getElementById('search-input').value = ""; 
+        document.getElementById('channel-grid').innerHTML = '<h2 style="width:100%; text-align:center; color:var(--blue);">রিলোড হচ্ছে...</h2>';
         await fetchChannels();
-    }
-
-    function downloadAPK() {
-        window.open(apkDownloadUrl, '_blank');
-    }
-
-    const searchInput = document.getElementById('search-input');
-    searchInput.addEventListener('click', function() { this.readOnly = false; this.focus(); });
-    searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { this.readOnly = false; this.focus(); } });
-    searchInput.addEventListener('blur', function() { this.readOnly = true; });
-    searchInput.addEventListener('input', function(e) {
-        const term = e.target.value.toLowerCase().trim();
-        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
-        renderGrid(filtered);
-    });
-
-    function goFullscreen() {
-        if (player.isFullscreen()) { player.exitFullscreen(); } 
-        else { player.requestFullscreen(); }
     }
 
     function playChannel(ch, cardElement) {
@@ -175,26 +176,19 @@
         }
     }
 
-    function renderGrid(list) {
-        const grid = document.getElementById('channel-grid');
-        grid.innerHTML = '';
-        list.forEach((ch, index) => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.tabIndex = 0;
-            const originalIdx = index + 1;
-            card.setAttribute('data-index', originalIdx);
-            card.innerHTML = `<div class="ch-index">${originalIdx}</div><div class="logo-box"><img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div><div class="name">${ch.name}</div>`;
+    function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
 
-            let lastClick = 0;
-            card.addEventListener('click', () => {
-                let currentTime = new Date().getTime();
-                if (currentTime - lastClick < 400) { goFullscreen(); } 
-                else { playChannel(ch, card); }
-                lastClick = currentTime;
-            });
-            grid.appendChild(card);
-        });
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('click', function() { this.readOnly = false; this.focus(); });
+    searchInput.addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
+        renderGrid(filtered);
+    });
+
+    function goFullscreen() {
+        if (player.isFullscreen()) { player.exitFullscreen(); } 
+        else { player.requestFullscreen(); }
     }
 
     function showCategory(type) {
@@ -202,16 +196,14 @@
         renderGrid(allChannels);
     }
 
+    // নম্বর এবং কিবোর্ড কন্ট্রোল আগের মতোই রাখা হয়েছে
     let numBuffer = "", numTimeout = null;
-
     function handleNumberKey(key) {
         if (document.activeElement === searchInput && !searchInput.readOnly) return;
-
         numBuffer += key;
         const osd = document.getElementById('osd-number');
         osd.innerText = "CH: " + numBuffer; 
         osd.style.display = 'block';
-        
         clearTimeout(numTimeout);
         numTimeout = setTimeout(() => {
             const targetIdx = parseInt(numBuffer);
@@ -227,17 +219,8 @@
     }
 
     window.addEventListener('keydown', (e) => {
-        if (e.key >= '0' && e.key <= '9') {
-            handleNumberKey(e.key);
-        }
+        if (e.key >= '0' && e.key <= '9') { handleNumberKey(e.key); }
     }, true);
-
-    player.on('keydown', (e) => {
-        if (e.which >= 48 && e.which <= 57) { 
-            const key = String.fromCharCode(e.which);
-            handleNumberKey(key);
-        }
-    });
 
     init();
 </script>
