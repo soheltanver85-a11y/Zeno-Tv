@@ -92,7 +92,10 @@
 
 <script>
     const player = videojs('tv-player');
-    const rawUrl = 'https://gitlab.com/soheltanver85/m3u-link/-/raw/main/playlist.m3u';
+    
+    // আপনার দেওয়া নতুন ইউআরএলটি এখানে বসানো হয়েছে
+    const rawUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+    
     const m3uUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawUrl);
     const apkDownloadUrl = 'https://www.mediafire.com/file/yvksk56pmlwx9m9/Zeno_Tv.apk/file';
 
@@ -202,11 +205,10 @@
         renderGrid(allChannels);
     }
 
-    // --- গ্লোবাল নম্বর এবং কি-বোর্ড লজিক (প্লেয়ারের ভেতরে থাকলেও কাজ করবে) ---
+    // --- গ্লোবাল নম্বর এবং কি-বোর্ড লজিক ---
     let numBuffer = "", numTimeout = null;
 
     function handleNumberKey(key) {
-        // সার্চ বক্সে টাইপ করার সময় নম্বর লজিক বন্ধ থাকবে
         if (document.activeElement === searchInput && !searchInput.readOnly) return;
 
         numBuffer += key;
@@ -220,7 +222,6 @@
             const chData = allChannels[targetIdx - 1];
             if (chData) {
                 const targetCard = document.querySelector(`.card[data-index="${targetIdx}"]`);
-                // ফুলস্ক্রিন থেকে বের হয়ে চ্যানেল প্লে করা ভালো দেখায়
                 if (player.isFullscreen()) { player.exitFullscreen(); }
                 playChannel(chData, targetCard);
             }
@@ -229,16 +230,14 @@
         }, 1500); 
     }
 
-    // উইন্ডো লেভেলে লিসেনার (পুরো পেজের যেকোনো জায়গায় কাজ করবে)
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
             handleNumberKey(e.key);
         }
-    }, true); // Use capture phase to override videojs default behaviors
+    }, true); 
 
-    // ভিডিওজেএস প্লেয়ারের জন্য আলাদাভাবে নম্বর হ্যান্ডলিং
     player.on('keydown', (e) => {
-        if (e.which >= 48 && e.which <= 57) { // 0-9
+        if (e.which >= 48 && e.which <= 57) {
             const key = String.fromCharCode(e.which);
             handleNumberKey(key);
         }
