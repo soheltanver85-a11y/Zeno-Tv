@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeno TV - TV Edition</title>
+    <title>Zeno TV - Ultra Edition</title>
     
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <style>
-        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        :root { --accent: #ff0000; --bg: #050505; --card: #1a1a1a; --blue: #0088ff; --gradient: linear-gradient(135deg, #0088ff, #0055ff); }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
 
         /* প্লেয়ার সেকশন */
         #player-wrapper { 
@@ -25,44 +26,74 @@
         .tabs-container { 
             flex-shrink: 0; display: flex; align-items: center; gap: 15px; 
             padding: 15px 25px; background: #0a0a0a; z-index: 3500;
-            border-bottom: 3px solid var(--blue); overflow-x: auto;
+            border-bottom: 2px solid #222; overflow-x: auto;
         }
 
-        .tab, .apk-btn, .refresh-btn, .custom-fs-btn { 
-            padding: 16px 30px; border-radius: 12px; cursor: pointer; background: #222; 
-            color: #fff; font-weight: bold; font-size: 18px; border: 3px solid transparent; outline: none;
+        /* আধুনিক রিফ্রেশ বাটন স্টাইল */
+        .refresh-btn { 
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 136, 255, 0.3);
+            outline: none;
+        }
+        .refresh-btn i { transition: transform 0.5s ease; }
+        .refresh-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0, 136, 255, 0.5); }
+        .refresh-btn:focus { border: 2px solid #fff; }
+        
+        /* রিফ্রেশ এনিমেশন */
+        .spinning { transform: rotate(360deg); }
+
+        .tab, .custom-fs-btn { 
+            padding: 14px 25px; border-radius: 50px; cursor: pointer; background: #222; 
+            color: #fff; font-weight: bold; font-size: 16px; border: 2px solid transparent; outline: none;
             white-space: nowrap; transition: 0.2s;
         }
 
         #search-input {
-            flex-grow: 1; min-width: 250px; padding: 16px 20px; border-radius: 12px; 
-            border: 3px solid #333; background: #111; color: #fff; font-size: 18px; 
-            outline: none;
+            flex-grow: 1; min-width: 200px; padding: 14px 20px; border-radius: 50px; 
+            border: 2px solid #333; background: #111; color: #fff; font-size: 16px; 
+            outline: none; transition: 0.3s;
+        }
+        #search-input:focus { border-color: var(--blue); background: #1a1a1a; }
+
+        .tab:focus, .card:focus, .custom-fs-btn:focus { 
+            border-color: #fff !important; transform: scale(1.05); background: var(--blue);
         }
 
-        .tab:focus, .card:focus, .refresh-btn:focus, .custom-fs-btn:focus, .apk-btn:focus, #search-input:focus { 
-            border-color: #fff !important; transform: scale(1.05); background: var(--blue); color: white;
-        }
-
-        /* বড় লোগো গ্রিড (TV Optimized) */
+        /* বড় লোগো গ্রিড (TV Edition) */
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 25px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
         
-        .card { background: var(--card); border-radius: 18px; cursor: pointer; border: 3px solid #333; position: relative; overflow: hidden; transition: 0.2s; }
-        
-        /* লোগো বক্স বড় করা হয়েছে */
-        .logo-box { height: 110px; display: flex; align-items: center; justify-content: center; background: #fff; padding: 10px; pointer-events: none; }
+        .card { background: var(--card); border-radius: 20px; cursor: pointer; border: 3px solid #222; position: relative; overflow: hidden; transition: 0.3s; }
+        .card:focus { border-color: var(--blue); transform: scale(1.05); z-index: 10; box-shadow: 0 0 20px rgba(0, 136, 255, 0.4); }
+
+        .logo-box { height: 110px; display: flex; align-items: center; justify-content: center; background: #fff; padding: 12px; pointer-events: none; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .name { padding: 15px; font-size: 16px; font-weight: bold; text-align: center; color: #fff; pointer-events: none; }
-        .ch-index { position: absolute; top: 10px; left: 10px; background: var(--blue); color: white; font-size: 14px; font-weight: bold; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; border: 2px solid white; }
+        .name { padding: 12px; font-size: 15px; font-weight: bold; text-align: center; color: #eee; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ch-index { position: absolute; top: 10px; left: 10px; background: var(--blue); color: white; font-size: 13px; font-weight: bold; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; border: 2px solid white; }
 
         /* OSD নম্বর */
         #osd-number { 
-            position: fixed; top: 50px; right: 50px; background: rgba(255, 0, 0, 0.95); 
-            color: white; font-size: 60px; font-weight: bold; padding: 20px 40px; 
-            border-radius: 20px; display: none; z-index: 99999; border: 4px solid white;
+            position: fixed; top: 40px; right: 40px; background: rgba(255, 0, 0, 0.95); 
+            color: white; font-size: 50px; font-weight: bold; padding: 15px 35px; 
+            border-radius: 15px; display: none; z-index: 99999; border: 3px solid white;
         }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -75,10 +106,13 @@
 
 <div id="ui-overlay">
     <div class="tabs-container">
-        <button class="tab" tabindex="0" onclick="showCategory('all')">সব চ্যানেল</button>
-        <button class="refresh-btn" tabindex="0" onclick="forceRefresh()">🔄 আপডেট</button>
+        <button class="refresh-btn" id="refresh-trigger" tabindex="0" onclick="smartRefresh()">
+            <i class="fa-solid fa-rotate"></i> <span>রিফ্রেশ</span>
+        </button>
+        
+        <button class="tab" tabindex="0" onclick="renderGrid(allChannels)">সব চ্যানেল</button>
         <button class="custom-fs-btn" tabindex="0" onclick="goFullscreen()">📺 ফুলস্ক্রিন</button>
-        <input type="text" id="search-input" placeholder="🔍 সার্চ..." tabindex="0">
+        <input type="text" id="search-input" placeholder="🔍 চ্যানেল খুঁজুন..." tabindex="0">
     </div>
 
     <div id="scroll-content">
@@ -95,13 +129,14 @@
 
     let allChannels = [];
 
-    // দ্রুত লোড করার জন্য ক্যাশ-ফার্স্ট ফাংশন
+    // ১. সাইটে ঢোকা মাত্রই ক্যাশ থেকে চ্যানেল দেখাবে
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
             renderGrid(allChannels);
         }
+        // ব্যাকগ্রাউন্ডে ডাটা আপডেট হবে কিন্তু ইউজারকে ওয়েট করাবে না
         fetchChannels(); 
     }
 
@@ -123,19 +158,32 @@
             });
 
             if (newChannels.length > 0) {
-                const oldData = localStorage.getItem('zeno_cache');
-                if (JSON.stringify(newChannels) !== oldData) {
-                    allChannels = newChannels;
-                    localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
-                    renderGrid(allChannels);
-                }
+                allChannels = newChannels;
+                localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("Update failed in background"); }
+    }
+
+    // স্মার্ট রিফ্রেশ: ক্যাশ ডিলিট করবে এবং সাথে সাথে পেজ রিলোড করবে
+    function smartRefresh() {
+        const btnIcon = document.querySelector('#refresh-trigger i');
+        btnIcon.classList.add('spinning'); // আইকন ঘুরতে থাকবে
+        
+        localStorage.removeItem('zeno_cache'); // ক্যাশ পরিষ্কার
+        
+        setTimeout(() => {
+            location.reload(); // ১ সেকেন্ড পর পেজ রিলোড হবে যাতে সাথে সাথে নতুন চ্যানেল আসে
+        }, 600);
     }
 
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = ''; 
+        if(list.length === 0) {
+            grid.innerHTML = '<h2 style="grid-column: 1/-1; text-align:center;">কোনো চ্যানেল পাওয়া যায়নি!</h2>';
+            return;
+        }
+        
         list.forEach((ch, index) => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -160,11 +208,7 @@
         if(cardElement) cardElement.focus();
     }
 
-    async function forceRefresh() {
-        localStorage.removeItem('zeno_cache');
-        location.reload();
-    }
-
+    // সার্চ ফিল্টার
     document.getElementById('search-input').addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
@@ -172,9 +216,8 @@
     });
 
     function goFullscreen() { player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen(); }
-    function showCategory(type) { renderGrid(allChannels); }
 
-    // টিভি রিমোট নম্বর সিস্টেম
+    // রিমোট নম্বর কন্ট্রোল
     let numBuffer = "", numTimeout = null;
     function handleNumberKey(key) {
         if (document.activeElement === document.getElementById('search-input')) return;
