@@ -87,20 +87,20 @@
 
 <script>
     const player = videojs('tv-player');
-    // সরাসরি GitHub লিঙ্ক ব্যবহার (প্রক্সি ছাড়া)
-    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv2/refs/heads/main/Live-tv2';
+    
+    // নতুন প্লেলিস্ট URL আপডেট করা হয়েছে
+    const m3uUrl = 'https://raw.githubusercontent.com/soheltanver85-a11y/Live-tv/refs/heads/main/Live%20tv';
     const apkDownloadUrl = 'https://www.mediafire.com/file/yvksk56pmlwx9m9/Zeno_Tv.apk/file';
 
     let allChannels = [];
 
-    // পেজ লোড হওয়া মাত্রই ক্যাশ চেক করবে এবং রেন্ডার করবে
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
-            renderGrid(allChannels); // দ্রুত দেখানোর জন্য ক্যাশ থেকে লোড
+            renderGrid(allChannels); 
         }
-        await fetchChannels(); // ব্যাকগ্রাউন্ডে নতুন ডেটা আপডেট করবে
+        await fetchChannels(); 
     }
 
     async function fetchChannels() {
@@ -124,7 +124,6 @@
             });
 
             if (newChannels.length > 0) {
-                // যদি ক্যাশ ডেটার সাথে নতুন ডেটার পার্থক্য থাকে তবেই আপডেট করবে
                 if (JSON.stringify(allChannels) !== JSON.stringify(newChannels)) {
                     allChannels = newChannels;
                     localStorage.setItem('zeno_cache', JSON.stringify(allChannels));
@@ -139,7 +138,7 @@
     function renderGrid(list) {
         const grid = document.getElementById('channel-grid');
         grid.innerHTML = '';
-        const fragment = document.createDocumentFragment(); // পারফরম্যান্সের জন্য ফ্র্যাগমেন্ট ব্যবহার
+        const fragment = document.createDocumentFragment();
 
         list.forEach((ch, index) => {
             const card = document.createElement('div');
@@ -196,7 +195,6 @@
         renderGrid(allChannels);
     }
 
-    // নম্বর এবং কিবোর্ড কন্ট্রোল আগের মতোই রাখা হয়েছে
     let numBuffer = "", numTimeout = null;
     function handleNumberKey(key) {
         if (document.activeElement === searchInput && !searchInput.readOnly) return;
