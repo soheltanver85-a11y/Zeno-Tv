@@ -116,6 +116,7 @@
     let currentView = 'all';
     let numBuffer = "";
     let osdTimeout;
+    let lastPlayedUrl = ""; // শেষ দেখা চ্যানেলের URL মনে রাখার জন্য
 
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
@@ -189,8 +190,21 @@
             grid.appendChild(card);
         });
 
-        const firstCard = grid.querySelector('.card');
-        if(firstCard) firstCard.focus();
+        // ফোকাস ম্যানেজমেন্ট: রি-রেন্ডার হলে যাতে শেষ দেখা চ্যানেলেই ফোকাস থাকে
+        focusLastOrFirstChannel();
+    }
+
+    function focusLastOrFirstChannel() {
+        if (lastPlayedUrl) {
+            const targetCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
+            if (targetCard) {
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetCard.focus();
+                return;
+            }
+        }
+        const firstCard = document.querySelector('#channel-grid .card');
+        if (firstCard) firstCard.focus();
     }
 
     function toggleFavorite(ch, card) {
@@ -209,9 +223,11 @@
     }
 
     function playChannel(ch, card) {
+        lastPlayedUrl = ch.url; // কারেন্ট প্লে হওয়া চ্যানেল সেভ করা হলো
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
         showOSD(`📺 এখন দেখছেন: ${ch.name}`);
+        
         if(card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.focus();
@@ -272,9 +288,9 @@
 
     function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
 
-    // কীবোর্ড এবং রিমোট D-Pad ও স্পেশাল বাটন হ্যান্ডলিং ইঞ্জিন
+    // গ্লোবাল কী ইভেন্ট লিসেনার (ফোকাস যেখানেই থাকুক এটি কাজ করবে)
     window.addEventListener('keydown', (e) => {
-        // নম্বর কী হ্যান্ডলার
+        // ১. নম্বর কী হ্যান্ডলার (ফোকাস যেকোনো জায়গায় থাকলেও কাজ করবে)
         if (e.key >= '0' && e.key <= '9') {
             handleNumberKey(e.key);
             return;
@@ -282,18 +298,36 @@
 
         const active = document.activeElement;
 
-        // শুধুমাত্র 'f' বা 'F' বাটন প্রেস করলেই ফেভারিট হবে
-        if (e.key === 'f' || e.key === 'F') {
-            if (active && active.classList.contains('card')) {
-                const url = active.getAttribute('data-url');
+        // ২. রিমোটের Play/Pause বাটন হ্যান্ডলার (ফেভারিট করা)
+        if (e.key === 'MediaPlayPause' || e.keyCode === 179 || e.keyCode === 85) {
+            let targetCard = active;
+            // ফোকাস যদি কার্ডে না থাকে, তবে শেষ প্লে করা চ্যানেলের কার্ডটি ধরবে
+            if (!targetCard || !targetCard.classList.contains('card')) {
+                targetCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
+            }
+            
+            if (targetCard) {
+                const url = targetCard.getAttribute('data-url');
                 const chData = allChannels.find(c => c.url === url);
                 if (chData) {
-                    toggleFavorite(chData, active);
+                    toggleFavorite(chData, targetCard);
+                    e.preventDefault();
                 }
             }
             return;
         }
 
+        // ৩. ফুলস্ক্রিন বা ভিডিও প্লেয়ার থেকে ব্যাক করলে কারেন্ট চ্যানেলে ফোকাস ফিরিয়ে আনা
+        if (e.key === 'Back' || e.key === 'Escape' || e.keyCode === 8) {
+            if (player.isFullscreen()) {
+                player.exitFullscreen();
+                e.preventDefault();
+            }
+            focusLastOrFirstChannel();
+            return;
+        }
+
+        // D-Pad নেভিগেশন কন্ট্রোল
         if (!active || !active.classList.contains('nav-item')) return;
 
         const items = Array.from(document.querySelectorAll('.nav-item'));
@@ -321,7 +355,10 @@
                 
             case 'ArrowDown':
                 if (!isCard) {
-                    if (cards.length > 0) cards[0].focus();
+                    // মেনুবার থেকে নিচে নামলে শেষ দেখা চ্যানেলে ফোকাস যাবে, প্রথমটাতে নয়
+                    const lastCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
+                    if (lastCard) lastCard.focus();
+                    else if (cards.length > 0) cards[0].focus();
                 } else {
                     const nextRowIdx = cards.indexOf(active) + columns;
                     if (nextRowIdx < cards.length) cards[nextRowIdx].focus();
@@ -341,6 +378,13 @@
                 }
                 e.preventDefault();
                 break;
+        }
+    });
+
+    // ভিডিও প্লেয়ার এলিমেন্ট রিমোটের ফোকাস বা ট্র্যাপ নষ্ট করা প্রতিরোধ করতে
+    player.on('fullscreenchange', () => {
+        if (!player.isFullscreen()) {
+            setTimeout(focusLastOrFirstChannel, 200);
         }
     });
 
