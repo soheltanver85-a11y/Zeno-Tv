@@ -50,7 +50,13 @@
         }
 
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        
+        /* ফিক্সড গ্রিড কলাম যাতে রিমোট নেভিগেশনের হিসাব ওলটপালট না হয় */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 20px; 
+        }
         
         .card { background: var(--card); border-radius: 15px; cursor: pointer; border: 2px solid #333; position: relative; overflow: hidden; transition: 0.2s; }
         .logo-box { height: 95px; display: flex; align-items: center; justify-content: center; background: #111; padding: 10px; pointer-events: none; }
@@ -82,7 +88,6 @@
 </head>
 <body>
 
-<!-- ওএসডি (OSD) এলিমেন্ট -->
 <div id="osd-msg"></div>
 
 <div id="player-wrapper">
@@ -116,7 +121,7 @@
     let currentView = 'all';
     let numBuffer = "";
     let osdTimeout;
-    let lastPlayedUrl = ""; // শেষ দেখা চ্যানেলের URL মনে রাখার জন্য
+    let lastPlayedUrl = "";
 
     async function init() {
         const cachedData = localStorage.getItem('zeno_cache');
@@ -172,7 +177,6 @@
                               <div class="logo-box"><img src="${ch.logo}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=TV'"></div>
                               <div class="name">${ch.name}</div>`;
 
-            // ক্লিক এবং ডাবল ক্লিক হ্যান্ডলিং
             let clickTimer;
             card.addEventListener('click', () => {
                 if (clickTimer) {
@@ -190,7 +194,6 @@
             grid.appendChild(card);
         });
 
-        // ফোকাস ম্যানেজমেন্ট: রি-রেন্ডার হলে যাতে শেষ দেখা চ্যানেলেই ফোকাস থাকে
         focusLastOrFirstChannel();
     }
 
@@ -223,7 +226,7 @@
     }
 
     function playChannel(ch, card) {
-        lastPlayedUrl = ch.url; // কারেন্ট প্লে হওয়া চ্যানেল সেভ করা হলো
+        lastPlayedUrl = ch.url;
         player.src({ src: ch.url, type: 'application/x-mpegURL' });
         player.play().catch(()=>{});
         showOSD(`📺 এখন দেখছেন: ${ch.name}`);
@@ -288,9 +291,8 @@
 
     function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
 
-    // গ্লোবাল কী ইভেন্ট লিসেনার (ফোকাস যেখানেই থাকুক এটি কাজ করবে)
+    // কীবোর্ড এবং রিমোট D-Pad এর জন্য নিখুঁত সিরিয়াল নেভিগেশন ইঞ্জিন
     window.addEventListener('keydown', (e) => {
-        // ১. নম্বর কী হ্যান্ডলার (ফোকাস যেকোনো জায়গায় থাকলেও কাজ করবে)
         if (e.key >= '0' && e.key <= '9') {
             handleNumberKey(e.key);
             return;
@@ -298,14 +300,12 @@
 
         const active = document.activeElement;
 
-        // ২. রিমোটের Play/Pause বাটন হ্যান্ডলার (ফেভারিট করা)
+        // Play/Pause বাটন দিয়ে ফেভারিট করার লজিক
         if (e.key === 'MediaPlayPause' || e.keyCode === 179 || e.keyCode === 85) {
             let targetCard = active;
-            // ফোকাস যদি কার্ডে না থাকে, তবে শেষ প্লে করা চ্যানেলের কার্ডটি ধরবে
             if (!targetCard || !targetCard.classList.contains('card')) {
                 targetCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
             }
-            
             if (targetCard) {
                 const url = targetCard.getAttribute('data-url');
                 const chData = allChannels.find(c => c.url === url);
@@ -317,7 +317,6 @@
             return;
         }
 
-        // ৩. ফুলস্ক্রিন বা ভিডিও প্লেয়ার থেকে ব্যাক করলে কারেন্ট চ্যানেলে ফোকাস ফিরিয়ে আনা
         if (e.key === 'Back' || e.key === 'Escape' || e.keyCode === 8) {
             if (player.isFullscreen()) {
                 player.exitFullscreen();
@@ -327,61 +326,86 @@
             return;
         }
 
-        // D-Pad নেভিগেশন কন্ট্রোল
-        if (!active || !active.classList.contains('nav-item')) return;
+        if (!active) return;
 
-        const items = Array.from(document.querySelectorAll('.nav-item'));
-        const index = items.indexOf(active);
-
+        // শুধুমাত্র যখন মেনু আইটেম বা চ্যানেল কার্ডে ফোকাস থাকবে
+        const menuItems = Array.from(document.querySelectorAll('.tabs-container .nav-item'));
         const grid = document.getElementById('channel-grid');
         const cards = Array.from(grid.querySelectorAll('.card'));
-        const isCard = active.classList.contains('card');
+        
+        const isMenu = menuItems.includes(active);
+        const isCard = cards.includes(active);
 
+        if (!isMenu && !isCard) return;
+
+        // স্ক্রিনে প্রতি সারিতে (Row) কয়টি কার্ড আছে তা নিখুঁতভাবে বের করা
         let columns = 1;
-        if (cards.length > 1) {
-            columns = Math.round(grid.offsetWidth / cards[0].offsetWidth);
+        if (cards.length > 0) {
+            const firstCardTop = cards[0].getBoundingClientRect().top;
+            columns = cards.filter(c => c.getBoundingClientRect().top === firstCardTop).length || 1;
         }
 
-        switch (e.key) {
-            case 'ArrowRight':
-                if (index < items.length - 1) items[index + 1].focus();
+        if (isMenu) {
+            const idx = menuItems.indexOf(active);
+            if (e.key === 'ArrowRight' && idx < menuItems.length - 1) {
+                menuItems[idx + 1].focus();
                 e.preventDefault();
-                break;
-                
-            case 'ArrowLeft':
-                if (index > 0) items[index - 1].focus();
+            } else if (e.key === 'ArrowLeft' && idx > 0) {
+                menuItems[idx - 1].focus();
                 e.preventDefault();
-                break;
-                
-            case 'ArrowDown':
-                if (!isCard) {
-                    // মেনুবার থেকে নিচে নামলে শেষ দেখা চ্যানেলে ফোকাস যাবে, প্রথমটাতে নয়
-                    const lastCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
-                    if (lastCard) lastCard.focus();
-                    else if (cards.length > 0) cards[0].focus();
-                } else {
-                    const nextRowIdx = cards.indexOf(active) + columns;
-                    if (nextRowIdx < cards.length) cards[nextRowIdx].focus();
-                }
+            } else if (e.key === 'ArrowDown') {
+                // মেনু থেকে ডাউন চাপলে শেষ দেখা চ্যানেলে যাবে, যদি না থাকে তবে ১ম চ্যানেলে যাবে
+                const lastCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
+                if (lastCard) lastCard.focus();
+                else if (cards.length > 0) cards[0].focus();
                 e.preventDefault();
-                break;
-                
-            case 'ArrowUp':
-                if (isCard) {
-                    const prevRowIdx = cards.indexOf(active) - columns;
-                    if (prevRowIdx >= 0) {
-                        cards[prevRowIdx].focus();
-                    } else {
-                        const menuItems = document.querySelectorAll('.tabs-container .nav-item');
-                        if(menuItems.length > 0) menuItems[0].focus();
+            }
+        } 
+        
+        else if (isCard) {
+            const idx = cards.indexOf(active);
+
+            switch (e.key) {
+                case 'ArrowRight':
+                    if (idx < cards.length - 1) {
+                        cards[idx + 1].focus();
+                        cards[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                }
-                e.preventDefault();
-                break;
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowLeft':
+                    if (idx > 0) {
+                        cards[idx - 1].focus();
+                        cards[idx - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowDown':
+                    // ঠিক নিচের সারির সোজা কলামের চ্যানেলে যাবে
+                    if (idx + columns < cards.length) {
+                        cards[idx + columns].focus();
+                        cards[idx + columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowUp':
+                    // ঠিক ওপরের সারির সোজা কলামের চ্যানেলে যাবে
+                    if (idx - columns >= 0) {
+                        cards[idx - columns].focus();
+                        cards[idx - columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        // যদি প্রথম সারিতে থাকে, তবেই কেবল ওপরে মেনুবারে যাবে, তার আগে নয়
+                        if (menuItems.length > 0) menuItems[0].focus();
+                    }
+                    e.preventDefault();
+                    break;
+            }
         }
     });
 
-    // ভিডিও প্লেয়ার এলিমেন্ট রিমোটের ফোকাস বা ট্র্যাপ নষ্ট করা প্রতিরোধ করতে
     player.on('fullscreenchange', () => {
         if (!player.isFullscreen()) {
             setTimeout(focusLastOrFirstChannel, 200);
