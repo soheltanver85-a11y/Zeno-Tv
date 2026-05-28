@@ -17,6 +17,47 @@
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
+        /* ইউনিক ও লেটেস্ট ডিজিটাল ঘড়ির স্টাইল */
+        .zeno-clock {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 136, 255, 0.2);
+            z-index: 5000; /* ভিডিও প্লেয়ারের সমস্ত কন্ট্রোলের উপরে রাখার জন্য */
+            pointer-events: none; /* ঘড়ির ওপর ক্লিক লাগলে যাতে প্লেয়ারে সমস্যা না হয় */
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* ঘড়ির ভেতরের এএম/পিএম টেক্সট */
+        .zeno-clock .ampm {
+            font-size: 12px;
+            color: var(--blue);
+            margin-left: 5px;
+            text-transform: uppercase;
+        }
+
+        /* কোলন ব্লিংকিং অ্যানিমেশন */
+        .zeno-clock .blink {
+            animation: clock-pulse 1s infinite;
+        }
+        @keyframes clock-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+        
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
         .tabs-container { 
@@ -92,6 +133,7 @@
 
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
+    <div id="live-clock" class="zeno-clock">00<span class="blink">:</span>00 <span class="ampm">AM</span></div>
 </div>
 
 <div id="ui-overlay">
@@ -123,7 +165,33 @@
     let osdTimeout;
     let lastPlayedUrl = "";
 
+    // বাংলাদেশ টাইম অনুযায়ী ঘড়ি আপডেট করার জন্য ফাংশন
+    function updateBangladeshClock() {
+        const clockEl = document.getElementById('live-clock');
+        if (!clockEl) return;
+
+        // ব্যবহারকারী পৃথিবীর যেকোনো দেশেই থাকুক না কেন, সর্বদা বাংলাদেশের সময় দেখাবে
+        const bdTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
+        const date = new Date(bdTime);
+        
+        let hours = date.getHours();
+        let minutes = date.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        
+        hours = hours % 12;
+        hours = hours ? hours : 12; // '0' ঘণ্টা হলে সেটাকে '12' করবে
+        
+        // সংখ্যা সিঙ্গেল ডিজিট হলে বামে '0' যুক্ত করার লজিক
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        
+        clockEl.innerHTML = `${hours}<span class="blink">:</span>${minutes} <span class="ampm">${ampm}</span>`;
+    }
+    // প্রতি সেকেন্ডে ঘড়ির সময় আপডেট হবে
+    setInterval(updateBangladeshClock, 1000);
+
     async function init() {
+        updateBangladeshClock(); // শুরুতেই একবার ঘড়ি লোড করে নেওয়া
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
@@ -284,6 +352,19 @@
         else player.requestFullscreen();
     }
 
+    // ফুলস্ক্রিন পরিবর্তন হলে ঘড়িটিকে সর্বদা উপরে ধরে রাখার জন্য ভিডিও এলিমেন্টে অ্যাপেন্ড করার লজিক
+    player.on('fullscreenchange', () => {
+        const clock = document.getElementById('live-clock');
+        if (player.isFullscreen()) {
+            // ফুলস্ক্রিন মোডে ভিডিও এলিমেন্টের মূল কন্টেইনারের ভেতর ঘড়িটি পুশ করা হচ্ছে
+            player.el().appendChild(clock);
+        } else {
+            // ফুলস্ক্রিন থেকে বের হলে পুনরায় আগের জায়গায় ফিরিয়ে আনা হচ্ছে
+            document.getElementById('player-wrapper').appendChild(clock);
+            setTimeout(focusLastOrFirstChannel, 200);
+        }
+    });
+
     function forceRefresh() {
         localStorage.removeItem('zeno_cache');
         location.reload();
@@ -403,12 +484,6 @@
                     e.preventDefault();
                     break;
             }
-        }
-    });
-
-    player.on('fullscreenchange', () => {
-        if (!player.isFullscreen()) {
-            setTimeout(focusLastOrFirstChannel, 200);
         }
     });
 
