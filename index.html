@@ -17,36 +17,39 @@
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* ইউনিক ও লেটেস্ট ডিজিটাল ঘড়ির স্টাইল */
+        /* দূর থেকে স্পষ্ট দেখার জন্য বড় এবং লাল নিয়ন ঘড়ির স্টাইল */
         .zeno-clock {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.65);
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.75); /* ঘড়ির লেখা ফুটিয়ে তোলার জন্য ব্যাকগ্রাউন্ড একটু ডার্ক করা হয়েছে */
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            color: #ffffff;
-            padding: 8px 16px;
-            border-radius: 30px;
+            color: #ff0000; /* সম্পূর্ণ লাল টেক্সট */
+            padding: 10px 24px;
+            border-radius: 35px;
             font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 1.5px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 136, 255, 0.2);
-            z-index: 5000; /* ভিডিও প্লেয়ারের সমস্ত কন্ট্রোলের উপরে রাখার জন্য */
-            pointer-events: none; /* ঘড়ির ওপর ক্লিক লাগলে যাতে প্লেয়ারে সমস্যা না হয় */
+            font-size: 28px; /* ফন্ট সাইজ বড় করা হয়েছে যাতে দূর থেকে চেনা যায় */
+            font-weight: 900; /* লেখাগুলো অনেক বেশি বোল্ড/মোটা করা হয়েছে */
+            letter-spacing: 2px;
+            border: 2px solid rgba(255, 0, 0, 0.4); /* লাল বর্ডার */
+            /* প্রিমিয়াম রেড নিয়ন গ্লো ইফেক্ট */
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6), inset 0 0 10px rgba(255, 0, 0, 0.2);
+            z-index: 5000; 
+            pointer-events: none; 
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
+            text-shadow: 0 0 12px rgba(255, 0, 0, 0.8); /* লেখার ওপর অতিরিক্ত গ্লো */
         }
         
         /* ঘড়ির ভেতরের এএম/পিএম টেক্সট */
         .zeno-clock .ampm {
-            font-size: 12px;
-            color: var(--blue);
-            margin-left: 5px;
-            text-transform: uppercase;
+            font-size: 16px;
+            color: #ffa500; /* AM/PM একটু ভিন্ন (কমলা) রঙ দেওয়া হয়েছে যাতে সুন্দর কম্বিনেশন হয় */
+            margin-left: 8px;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 165, 0, 0.6);
         }
 
         /* কোলন ব্লিংকিং অ্যানিমেশন */
@@ -55,7 +58,7 @@
         }
         @keyframes clock-pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
+            50% { opacity: 0.1; }
         }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
@@ -170,7 +173,6 @@
         const clockEl = document.getElementById('live-clock');
         if (!clockEl) return;
 
-        // ব্যবহারকারী পৃথিবীর যেকোনো দেশেই থাকুক না কেন, সর্বদা বাংলাদেশের সময় দেখাবে
         const bdTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
         const date = new Date(bdTime);
         
@@ -179,19 +181,17 @@
         const ampm = hours >= 12 ? 'PM' : 'AM';
         
         hours = hours % 12;
-        hours = hours ? hours : 12; // '0' ঘণ্টা হলে সেটাকে '12' করবে
+        hours = hours ? hours : 12; 
         
-        // সংখ্যা সিঙ্গেল ডিজিট হলে বামে '0' যুক্ত করার লজিক
         hours = hours < 10 ? '0' + hours : hours;
         minutes = minutes < 10 ? '0' + minutes : minutes;
         
-        clockEl.innerHTML = `${hours}<span class="blink">:</span>${minutes} <span class="ampm">${ampm}</span>`;
+        clockEl.innerHTML = `${hours}<span class="blink">:</span>${minutes}<span class="ampm">${ampm}</span>`;
     }
-    // প্রতি সেকেন্ডে ঘড়ির সময় আপডেট হবে
     setInterval(updateBangladeshClock, 1000);
 
     async function init() {
-        updateBangladeshClock(); // শুরুতেই একবার ঘড়ি লোড করে নেওয়া
+        updateBangladeshClock(); 
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
@@ -352,14 +352,12 @@
         else player.requestFullscreen();
     }
 
-    // ফুলস্ক্রিন পরিবর্তন হলে ঘড়িটিকে সর্বদা উপরে ধরে রাখার জন্য ভিডিও এলিমেন্টে অ্যাপেন্ড করার লজিক
+    // ফুলস্ক্রিন চেঞ্জ হ্যান্ডলার
     player.on('fullscreenchange', () => {
         const clock = document.getElementById('live-clock');
         if (player.isFullscreen()) {
-            // ফুলস্ক্রিন মোডে ভিডিও এলিমেন্টের মূল কন্টেইনারের ভেতর ঘড়িটি পুশ করা হচ্ছে
             player.el().appendChild(clock);
         } else {
-            // ফুলস্ক্রিন থেকে বের হলে পুনরায় আগের জায়গায় ফিরিয়ে আনা হচ্ছে
             document.getElementById('player-wrapper').appendChild(clock);
             setTimeout(focusLastOrFirstChannel, 200);
         }
@@ -372,7 +370,7 @@
 
     function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
 
-    // কীবোর্ড এবং রিমোট D-Pad এর জন্য নিখুঁত সিরিয়াল নেভিগেশন ইঞ্জিন
+    // কি-বোর্ড নেভিগেশন ইঞ্জিন
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
             handleNumberKey(e.key);
@@ -381,7 +379,6 @@
 
         const active = document.activeElement;
 
-        // Play/Pause বাটন দিয়ে ফেভারিট করার লজিক
         if (e.key === 'MediaPlayPause' || e.keyCode === 179 || e.keyCode === 85) {
             let targetCard = active;
             if (!targetCard || !targetCard.classList.contains('card')) {
@@ -409,7 +406,6 @@
 
         if (!active) return;
 
-        // শুধুমাত্র যখন মেনু আইটেম বা চ্যানেল কার্ডে ফোকাস থাকবে
         const menuItems = Array.from(document.querySelectorAll('.tabs-container .nav-item'));
         const grid = document.getElementById('channel-grid');
         const cards = Array.from(grid.querySelectorAll('.card'));
@@ -419,7 +415,6 @@
 
         if (!isMenu && !isCard) return;
 
-        // স্ক্রিনে প্রতি সারিতে (Row) কয়টি কার্ড আছে তা নিখুঁতভাবে বের করা
         let columns = 1;
         if (cards.length > 0) {
             const firstCardTop = cards[0].getBoundingClientRect().top;
@@ -435,7 +430,6 @@
                 menuItems[idx - 1].focus();
                 e.preventDefault();
             } else if (e.key === 'ArrowDown') {
-                // মেনু থেকে ডাউন চাপলে শেষ দেখা চ্যানেলে যাবে, যদি না থাকে তবে ১ম চ্যানেলে যাবে
                 const lastCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
                 if (lastCard) lastCard.focus();
                 else if (cards.length > 0) cards[0].focus();
@@ -464,7 +458,6 @@
                     break;
                     
                 case 'ArrowDown':
-                    // ঠিক নিচের সারির সোজা কলামের চ্যানেলে যাবে
                     if (idx + columns < cards.length) {
                         cards[idx + columns].focus();
                         cards[idx + columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -473,12 +466,10 @@
                     break;
                     
                 case 'ArrowUp':
-                    // ঠিক ওপরের সারির সোজা কলামের চ্যানেলে যাবে
                     if (idx - columns >= 0) {
                         cards[idx - columns].focus();
                         cards[idx - columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
                     } else {
-                        // যদি প্রথম সারিতে থাকে, তবেই কেবল ওপরে মেনুবারে যাবে, তার আগে নয়
                         if (menuItems.length > 0) menuItems[0].focus();
                     }
                     e.preventDefault();
