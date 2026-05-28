@@ -17,48 +17,43 @@
         }
         .video-js { width: 100% !important; height: 100% !important; }
         
-        /* দূর থেকে স্পষ্ট দেখার জন্য বড় এবং লাল নিয়ন ঘড়ির স্টাইল */
+        /* স্থির কোলনসহ প্রিমিয়াম লাল নিয়ন ঘড়ির স্টাইল */
         .zeno-clock {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.75); /* ঘড়ির লেখা ফুটিয়ে তোলার জন্য ব্যাকগ্রাউন্ড একটু ডার্ক করা হয়েছে */
+            background: rgba(0, 0, 0, 0.75); 
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             color: #ff0000; /* সম্পূর্ণ লাল টেক্সট */
             padding: 10px 24px;
             border-radius: 35px;
             font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 28px; /* ফন্ট সাইজ বড় করা হয়েছে যাতে দূর থেকে চেনা যায় */
-            font-weight: 900; /* লেখাগুলো অনেক বেশি বোল্ড/মোটা করা হয়েছে */
+            font-size: 28px; 
+            font-weight: 900; 
             letter-spacing: 2px;
-            border: 2px solid rgba(255, 0, 0, 0.4); /* লাল বর্ডার */
-            /* প্রিমিয়াম রেড নিয়ন গ্লো ইফেক্ট */
+            border: 2px solid rgba(255, 0, 0, 0.4); 
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.6), inset 0 0 10px rgba(255, 0, 0, 0.2);
             z-index: 5000; 
             pointer-events: none; 
             display: flex;
             align-items: center;
             gap: 5px;
-            text-shadow: 0 0 12px rgba(255, 0, 0, 0.8); /* লেখার ওপর অতিরিক্ত গ্লো */
+            text-shadow: 0 0 12px rgba(255, 0, 0, 0.8); 
         }
         
         /* ঘড়ির ভেতরের এএম/পিএম টেক্সট */
         .zeno-clock .ampm {
             font-size: 16px;
-            color: #ffa500; /* AM/PM একটু ভিন্ন (কমলা) রঙ দেওয়া হয়েছে যাতে সুন্দর কম্বিনেশন হয় */
+            color: #ffa500; 
             margin-left: 8px;
             font-weight: bold;
             text-shadow: 0 0 8px rgba(255, 165, 0, 0.6);
         }
 
-        /* কোলন ব্লিংকিং অ্যানিমেশন */
-        .zeno-clock .blink {
-            animation: clock-pulse 1s infinite;
-        }
-        @keyframes clock-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.1; }
+        /* কোলন চিহ্নটি এখন একদম স্থির থাকবে, কোনো অ্যানিমেশন নেই */
+        .zeno-clock .fixed-colon {
+            opacity: 1;
         }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
@@ -95,7 +90,7 @@
 
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         
-        /* ফিক্সড গ্রিড কলাম যাতে রিমোট নেভিগেশনের হিসাব ওলটপালট না হয় */
+        /* ফিক্সড গ্রিড কলাম */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
@@ -136,7 +131,8 @@
 
 <div id="player-wrapper">
     <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
-    <div id="live-clock" class="zeno-clock">00<span class="blink">:</span>00 <span class="ampm">AM</span></div>
+    <!-- স্থির কোলনসহ লাইভ ঘড়ি -->
+    <div id="live-clock" class="zeno-clock">00<span class="fixed-colon">:</span>00 <span class="ampm">AM</span></div>
 </div>
 
 <div id="ui-overlay">
@@ -186,7 +182,8 @@
         hours = hours < 10 ? '0' + hours : hours;
         minutes = minutes < 10 ? '0' + minutes : minutes;
         
-        clockEl.innerHTML = `${hours}<span class="blink">:</span>${minutes}<span class="ampm">${ampm}</span>`;
+        // এখানে কোলনের ক্লাস পরিবর্তন করে fixed-colon করা হয়েছে যাতে এটি স্থির থাকে
+        clockEl.innerHTML = `${hours}<span class="fixed-colon">:</span>${minutes}<span class="ampm">${ampm}</span>`;
     }
     setInterval(updateBangladeshClock, 1000);
 
