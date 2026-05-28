@@ -15,7 +15,7 @@
             height: 45vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 4000; 
             display: flex; justify-content: center; align-items: center; border-bottom: 3px solid #333;
         }
-        .video-js { width: 100% !important; height: 100% !important; position: relative; }
+        .video-js { width: 100% !important; height: 100% !important; }
         
         #ui-overlay { margin-top: 45vh; height: 55vh; display: flex; flex-direction: column; background: var(--bg); }
         
@@ -51,7 +51,7 @@
 
         #scroll-content { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px; }
         
-        /* ফিক্সড গ্রিড কলাম */
+        /* ফিক্সড গ্রিড কলাম যাতে রিমোট নেভিগেশনের হিসাব ওলটপালট না হয় */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
@@ -73,110 +73,25 @@
             text-shadow: 0 0 5px black;
         }
 
-        /* দূর থেকে স্পষ্ট দেখার জন্য বড় এবং আকর্ষণীয় চ্যানেল নম্বর */
-        .ch-index { 
-            position: absolute; 
-            top: 6px; 
-            left: 6px; 
-            background: linear-gradient(135deg, var(--blue), #0055ff); 
-            color: white; 
-            font-size: 16px; 
-            font-weight: 900; 
-            width: 36px; 
-            height: 36px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-radius: 50%; 
-            z-index: 5; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 0 5px rgba(255,255,255,0.3);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        .ch-index { position: absolute; top: 8px; left: 8px; background: var(--blue); color: white; font-size: 12px; font-weight: bold; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%; z-index: 5; }
 
-        /* প্লেয়ারের ভেতরের কন্টেইনার (OSD এবং ঘড়ির সঠিক ফুলস্ক্রিন স্থায়িত্বের জন্য) */
-        .player-hud-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* আল্ট্রা-মডার্ন ওয়ান-লাইন ওএসডি (প্লেয়ারের ওপরে বাম পাশে) */
+        /* উন্নত অন-স্ক্রিন ডিসপ্লে (OSD) */
         #osd-msg { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px;
-            background: rgba(10, 10, 10, 0.75); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #ffffff; 
-            font-size: 18px; 
-            font-weight: 600; 
-            padding: 10px 22px; 
-            border-radius: 12px; 
-            display: none; 
-            border: 1px solid rgba(0, 136, 255, 0.4); 
-            text-align: left; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 136, 255, 0.2);
-            letter-spacing: 0.5px;
-            animation: fadeInOSD 0.3s ease-out;
-        }
-        
-        @keyframes fadeInOSD {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* আল্ট্রা-লেটেস্ট ডিজিটাল ঘড়ি (প্লেয়ারের ওপরে ডান পাশে) */
-        .digital-clock {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(10, 10, 10, 0.65);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 18px;
-            border-radius: 12px;
-            color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 20px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            position: fixed; bottom: 60vh; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85); color: white; font-size: 28px; font-weight: bold; 
+            padding: 18px 45px; border-radius: 30px; display: none; z-index: 99999; 
+            border: 3px solid var(--blue); text-align: center; pointer-events: none;
+            box-shadow: 0 0 30px rgba(0, 136, 255, 0.5);
             letter-spacing: 1px;
-        }
-        .digital-clock .time-glow {
-            color: #00ffcc;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-        }
-        .digital-clock .ampm {
-            font-size: 12px;
-            color: #ffaa00;
-            font-family: 'Segoe UI', sans-serif;
-            text-transform: uppercase;
-            font-weight: 800;
         }
     </style>
 </head>
 <body>
 
+<div id="osd-msg"></div>
+
 <div id="player-wrapper">
-    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline>
-        <div class="player-hud-container">
-            <div id="osd-msg"></div>
-            <div class="digital-clock" id="live-clock">
-                <span class="time-glow" id="clock-time">00:00:00</span>
-                <span class="ampm" id="clock-ampm">AM</span>
-            </div>
-        </div>
-    </video>
+    <video id="tv-player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
 </div>
 
 <div id="ui-overlay">
@@ -208,31 +123,7 @@
     let osdTimeout;
     let lastPlayedUrl = "";
 
-    // নিখুঁত বাংলাদেশ সময় ট্র্যাকিং ডিজিটাল ঘড়ি ফাংশন
-    function startDigitalClock() {
-        setInterval(() => {
-            const bdtTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
-            const dateObj = new Date(bdtTime);
-            
-            let hours = dateObj.getHours();
-            let minutes = dateObj.getMinutes();
-            let seconds = dateObj.getSeconds();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            
-            hours = hours % 12;
-            hours = hours ? hours : 12; // 0 কে 12 বানানোর লজিক
-            
-            hours = hours < 10 ? '0' + hours : hours;
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            seconds = seconds < 10 ? '0' + seconds : seconds;
-            
-            document.getElementById('clock-time').innerText = `${hours}:${minutes}:${seconds}`;
-            document.getElementById('clock-ampm').innerText = ampm;
-        }, 1000);
-    }
-
     async function init() {
-        startDigitalClock(); // ঘড়ি চালু করা হলো
         const cachedData = localStorage.getItem('zeno_cache');
         if (cachedData) {
             allChannels = JSON.parse(cachedData);
@@ -363,7 +254,7 @@
         osd.innerText = msg;
         osd.style.display = 'block';
         clearTimeout(osdTimeout);
-        osdTimeout = setTimeout(() => osd.style.display = 'none', 4000); // ওএসডি ৪ সেকেন্ড ভেসে থাকবে
+        osdTimeout = setTimeout(() => osd.style.display = 'none', 3000);
     }
 
     function handleNumberKey(key) {
@@ -400,7 +291,7 @@
 
     function downloadAPK() { window.open(apkDownloadUrl, '_blank'); }
 
-    // কীবোর্ড এবং রিমোট D-Pad এর নেভিগেশন ইঞ্জিন
+    // কীবোর্ড এবং রিমোট D-Pad এর জন্য নিখুঁত সিরিয়াল নেভিগেশন ইঞ্জিন
     window.addEventListener('keydown', (e) => {
         if (e.key >= '0' && e.key <= '9') {
             handleNumberKey(e.key);
@@ -409,6 +300,7 @@
 
         const active = document.activeElement;
 
+        // Play/Pause বাটন দিয়ে ফেভারিট করার লজিক
         if (e.key === 'MediaPlayPause' || e.keyCode === 179 || e.keyCode === 85) {
             let targetCard = active;
             if (!targetCard || !targetCard.classList.contains('card')) {
@@ -436,6 +328,7 @@
 
         if (!active) return;
 
+        // শুধুমাত্র যখন মেনু আইটেম বা চ্যানেল কার্ডে ফোকাস থাকবে
         const menuItems = Array.from(document.querySelectorAll('.tabs-container .nav-item'));
         const grid = document.getElementById('channel-grid');
         const cards = Array.from(grid.querySelectorAll('.card'));
@@ -445,6 +338,7 @@
 
         if (!isMenu && !isCard) return;
 
+        // স্ক্রিনে প্রতি সারিতে (Row) কয়টি কার্ড আছে তা নিখুঁতভাবে বের করা
         let columns = 1;
         if (cards.length > 0) {
             const firstCardTop = cards[0].getBoundingClientRect().top;
@@ -460,6 +354,7 @@
                 menuItems[idx - 1].focus();
                 e.preventDefault();
             } else if (e.key === 'ArrowDown') {
+                // মেনু থেকে ডাউন চাপলে শেষ দেখা চ্যানেলে যাবে, যদি না থাকে তবে ১ম চ্যানেলে যাবে
                 const lastCard = document.querySelector(`.card[data-url="${lastPlayedUrl}"]`);
                 if (lastCard) lastCard.focus();
                 else if (cards.length > 0) cards[0].focus();
@@ -488,6 +383,7 @@
                     break;
                     
                 case 'ArrowDown':
+                    // ঠিক নিচের সারির সোজা কলামের চ্যানেলে যাবে
                     if (idx + columns < cards.length) {
                         cards[idx + columns].focus();
                         cards[idx + columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -496,10 +392,12 @@
                     break;
                     
                 case 'ArrowUp':
+                    // ঠিক ওপরের সারির সোজা কলামের চ্যানেলে যাবে
                     if (idx - columns >= 0) {
                         cards[idx - columns].focus();
                         cards[idx - columns].scrollIntoView({ behavior: 'smooth', block: 'center' });
                     } else {
+                        // যদি প্রথম সারিতে থাকে, তবেই কেবল ওপরে মেনুবারে যাবে, তার আগে নয়
                         if (menuItems.length > 0) menuItems[0].focus();
                     }
                     e.preventDefault();
